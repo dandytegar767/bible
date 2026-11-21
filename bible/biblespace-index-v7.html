@@ -1,0 +1,2353 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>BibleSpace — Ruang Baca & Studi Alkitab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            canvas: { light: '#FAF8F5', dark: '#111110' },
+            surface: { light: '#FFFFFF', dark: '#191817', subtleLight: '#F2EFE9', subtleDark: '#242220' },
+            ink: { light: '#18181B', mutedLight: '#71717A', dark: '#F4F4F2', mutedDark: '#A1A19A' },
+            brand: { DEFAULT: '#B45309', dark: '#92400E', soft: '#FEF3C7' },
+            accent: { DEFAULT: '#C2410C', warm: '#D97706' }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            display: ['"Fraunces"', 'Georgia', 'serif'],
+            serif: ['"Instrument Serif"', 'Georgia', 'serif']
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    html, body {
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    body {
+      transition: background-color 0.25s ease, color 0.25s ease;
+      padding-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
+    }
+    .glass {
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .fade-up { animation: fadeUp 0.32s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .verse-tap { transition: transform 0.15s ease, background-color 0.2s ease; }
+    .verse-tap:active { transform: scale(0.995); }
+    .photo-card img { transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+    .photo-card:hover img { transform: scale(1.04); }
+    .safe-dock {
+      bottom: calc(0.85rem + env(safe-area-inset-bottom, 0px));
+    }
+    .safe-floating {
+      bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+    }
+    @media (min-width: 768px) {
+      body { padding-bottom: 2.5rem; }
+      .safe-floating { bottom: 1.5rem; }
+    }
+  </style>
+</head>
+<body class="bg-canvas-light text-ink-light dark:bg-canvas-dark dark:text-ink-dark font-sans antialiased selection:bg-amber-500/20">
+
+  <!-- Unified Adaptive Top Header (Balanced 3-Zone on Laptop, Clean & Compact on Mobile) -->
+  <header id="app-header" class="sticky top-0 z-30 glass bg-canvas-light/88 dark:bg-canvas-dark/88 border-b border-stone-200/75 dark:border-stone-800/75">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+      <!-- Left: Brand Logo -->
+      <button onclick="navigate('home')" class="flex items-center gap-2.5 group shrink-0 text-left">
+        <div class="w-9 h-9 rounded-xl bg-stone-900 dark:bg-stone-100 text-stone-50 dark:text-stone-900 flex items-center justify-center font-serif italic text-xl font-bold group-hover:scale-105 transition-transform shadow-xs">
+          B
+        </div>
+        <div>
+          <span class="font-display font-bold text-base tracking-tight block leading-none">BibleSpace</span>
+          <span class="text-[9px] font-semibold text-ink-mutedLight dark:text-ink-mutedDark tracking-widest uppercase mt-0.5 block">Scripture Journal</span>
+        </div>
+      </button>
+
+      <!-- Center: Desktop / Laptop Primary Navigation Pill Bar -->
+      <nav id="desktop-nav-items" aria-label="Navigasi Desktop" class="hidden md:flex items-center gap-1 p-1 rounded-full bg-surface-subtleLight/90 dark:bg-surface-subtleDark/90 border border-stone-200/70 dark:border-stone-800/70"></nav>
+
+      <!-- Right: Utility Controls + Live Progress Pill -->
+      <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <button onclick="navigate('plans')" id="header-progress-pill" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/12 hover:bg-amber-500/20 text-brand text-xs font-bold transition-colors" title="Progres Bacaan">
+          <span class="w-1.5 h-1.5 rounded-full bg-brand"></span>
+          <span id="header-progress-text">0 Pasal</span>
+        </button>
+
+        <button onclick="openQuickSearch()" class="flex items-center gap-2 px-3 py-1.5 min-h-[36px] rounded-full bg-surface-light dark:bg-surface-dark border border-stone-200 dark:border-stone-800 text-xs text-ink-mutedLight dark:text-ink-mutedDark hover:border-brand transition-colors" title="Cari kitab">
+          <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <span id="quick-search-label" class="hidden lg:inline">Cari kitab...</span>
+          <kbd class="hidden xl:inline text-[10px] px-1.5 py-0.5 rounded bg-surface-subtleLight dark:bg-surface-subtleDark font-mono">⌘K</kbd>
+        </button>
+
+        <button onclick="toggleUILang()" id="ui-lang-btn" class="px-3 py-1.5 min-h-[36px] rounded-full bg-surface-subtleLight dark:bg-surface-subtleDark hover:bg-amber-500/15 text-xs font-bold tracking-wide transition-colors">
+          ID
+        </button>
+
+        <button onclick="toggleTheme()" id="theme-btn" class="w-9 h-9 rounded-full bg-surface-subtleLight dark:bg-surface-subtleDark hover:bg-amber-500/15 flex items-center justify-center transition-colors" title="Ganti Tema">
+          <span id="theme-icon"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Viewport -->
+  <main id="app-root" class="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 min-h-[78vh]"></main>
+
+  <!-- Mobile Bottom Floating Dock (Hidden on md+ screens where Top Nav takes over) -->
+  <nav id="bottom-dock" aria-label="Navigasi Mobile" class="md:hidden fixed safe-dock left-1/2 -translate-x-1/2 z-40 w-[94%] max-w-md">
+    <div id="bottom-nav-items" class="glass bg-surface-light/95 dark:bg-surface-dark/95 border border-stone-200/90 dark:border-stone-800/90 rounded-full px-1.5 py-1.5 shadow-xl flex items-center justify-between gap-1"></div>
+  </nav>
+
+  <!-- More / Menu Drawer Sheet -->
+  <div id="more-menu-drawer" class="hidden fixed inset-0 z-50 bg-black/45 backdrop-blur-sm flex items-end sm:items-center justify-center p-3 sm:p-4" onclick="if(event.target===this) closeMoreMenu()">
+    <div class="bg-surface-light dark:bg-surface-dark border border-stone-200 dark:border-stone-800 rounded-3xl w-full max-w-lg p-5 sm:p-6 shadow-2xl space-y-5 fade-up max-h-[85vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-stone-200/80 dark:border-stone-800 pb-3.5">
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-widest text-brand block">Eksplorasi &amp; Menu</span>
+          <h3 class="font-display font-bold text-xl">Ruang Lainnya</h3>
+        </div>
+        <button onclick="closeMoreMenu()" class="w-9 h-9 rounded-full bg-surface-subtleLight dark:bg-surface-subtleDark flex items-center justify-center hover:opacity-80">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div id="more-menu-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5"></div>
+    </div>
+  </div>
+
+  <!-- Interactive Verse Action Sheet -->
+  <div id="verse-action-sheet" class="hidden fixed safe-floating left-1/2 -translate-x-1/2 z-50 w-[94%] max-w-xl glass bg-surface-light/95 dark:bg-surface-dark/95 border border-stone-300 dark:border-stone-700 rounded-3xl p-4 shadow-xl fade-up">
+    <div class="flex items-center justify-between pb-3 mb-3 border-b border-stone-200 dark:border-stone-800">
+      <div class="pr-2">
+        <span id="sheet-verse-ref" class="font-display font-bold text-sm text-brand">Yohanes 1:5</span>
+        <p id="sheet-verse-snippet" class="text-xs text-ink-mutedLight dark:text-ink-mutedDark line-clamp-1 mt-0.5"></p>
+      </div>
+      <button onclick="closeVerseSheet()" class="w-8 h-8 rounded-full bg-surface-subtleLight dark:bg-surface-subtleDark text-xs flex items-center justify-center shrink-0">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <span class="text-[11px] font-medium text-ink-mutedLight dark:text-ink-mutedDark mr-1">Stabilo:</span>
+        <button onclick="applySheetHighlight('amber')" class="w-6 h-6 rounded-full bg-amber-300 border-2 border-white dark:border-stone-800 shadow-sm hover:scale-110 transition-transform" title="Warm Amber"></button>
+        <button onclick="applySheetHighlight('terracotta')" class="w-6 h-6 rounded-full bg-orange-300 border-2 border-white dark:border-stone-800 shadow-sm hover:scale-110 transition-transform" title="Terracotta"></button>
+        <button onclick="applySheetHighlight('stone')" class="w-6 h-6 rounded-full bg-stone-300 border-2 border-white dark:border-stone-800 shadow-sm hover:scale-110 transition-transform" title="Warm Stone"></button>
+        <button onclick="applySheetHighlight('rose')" class="w-6 h-6 rounded-full bg-rose-300 border-2 border-white dark:border-stone-800 shadow-sm hover:scale-110 transition-transform" title="Clay Rose"></button>
+        <button onclick="applySheetHighlight(null)" class="px-2.5 py-1 rounded-full text-[10px] bg-surface-subtleLight dark:bg-surface-subtleDark hover:opacity-80">Hapus</button>
+      </div>
+
+      <div class="flex items-center gap-1.5 text-xs font-medium">
+        <button onclick="bookmarkFromSheet()" id="sheet-bm-btn" class="px-3 py-1.5 rounded-full bg-surface-subtleLight dark:bg-surface-subtleDark hover:bg-amber-500/15 transition-colors">Simpan</button>
+        <button onclick="noteFromSheet()" class="px-3 py-1.5 rounded-full bg-surface-subtleLight dark:bg-surface-subtleDark hover:bg-amber-500/15 transition-colors">Catatan</button>
+        <button onclick="shareCardFromSheet()" class="px-3.5 py-1.5 rounded-full bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 font-semibold transition-colors">Kartu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compact Responsive Reader Controls Bar -->
+  <div id="reader-floating-bar" class="hidden fixed safe-floating left-1/2 -translate-x-1/2 z-30 glass bg-surface-light/95 dark:bg-surface-dark/95 border border-stone-200 dark:border-stone-800 px-2.5 sm:px-3.5 py-1.5 rounded-full shadow-lg flex items-center justify-center gap-1 sm:gap-2 text-[11px] sm:text-xs max-w-[95vw]">
+    <button onclick="stepChapter(-1)" class="px-2 sm:px-2.5 py-1.5 rounded-full hover:bg-surface-subtleLight dark:hover:bg-surface-subtleDark font-medium shrink-0">← <span class="hidden sm:inline">Prev</span></button>
+    <button onclick="speakCurrentChapter()" id="tts-btn" class="px-2.5 sm:px-3 py-1.5 rounded-full bg-amber-500/15 text-brand font-semibold flex items-center gap-1 hover:bg-amber-500/25 transition-colors shrink-0">
+      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+      <span id="tts-label">Dengar</span>
+    </button>
+    <button onclick="adjustFontSize(-1)" class="w-7 h-7 rounded-full hover:bg-surface-subtleLight dark:hover:bg-surface-subtleDark font-semibold shrink-0">A-</button>
+    <button onclick="adjustFontSize(1)" class="w-7 h-7 rounded-full hover:bg-surface-subtleLight dark:hover:bg-surface-subtleDark font-semibold shrink-0">A+</button>
+    <button onclick="toggleFocusMode()" id="focus-btn" class="px-2 sm:px-2.5 py-1.5 rounded-full hover:bg-surface-subtleLight dark:hover:bg-surface-subtleDark shrink-0">Fokus</button>
+    <button onclick="stepChapter(1)" class="px-2 sm:px-2.5 py-1.5 rounded-full hover:bg-surface-subtleLight dark:hover:bg-surface-subtleDark font-medium shrink-0"><span class="hidden sm:inline">Next</span> →</button>
+  </div>
+
+  <!-- Quick Search Command Modal (⌘K) -->
+  <div id="search-modal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-start justify-center pt-16 sm:pt-20 p-4" onclick="if(event.target===this) closeQuickSearch()">
+    <div class="bg-surface-light dark:bg-surface-dark border border-stone-200 dark:border-stone-800 rounded-3xl max-w-lg w-full p-5 shadow-2xl space-y-4 fade-up">
+      <div class="flex items-center gap-3 border-b border-stone-200 dark:border-stone-800 pb-3">
+        <svg class="w-4 h-4 text-brand shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="global-search-input" oninput="handleQuickSearch(this.value)" type="text" placeholder="Ketik nama kitab atau surat (misal: Roma, Filipi, Yohanes, Mazmur)..." class="w-full bg-transparent text-sm focus:outline-none" />
+        <button onclick="closeQuickSearch()" class="text-xs px-2.5 py-1 rounded-lg bg-surface-subtleLight dark:bg-surface-subtleDark">ESC</button>
+      </div>
+      <div id="quick-search-results" class="max-h-72 overflow-y-auto space-y-1.5"></div>
+    </div>
+  </div>
+
+  <!-- Personal Note Modal -->
+  <div id="note-modal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onclick="if(event.target===this) closeNoteModal()">
+    <div class="bg-surface-light dark:bg-surface-dark border border-stone-200 dark:border-stone-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 fade-up">
+      <div class="flex justify-between items-center">
+        <h3 class="font-display font-bold text-lg">Catatan Refleksi</h3>
+        <button onclick="closeNoteModal()" class="w-8 h-8 rounded-full bg-surface-subtleLight dark:bg-surface-subtleDark text-xs flex items-center justify-center">✕</button>
+      </div>
+      <p id="note-verse-ref" class="text-xs font-semibold text-brand"></p>
+      <p id="note-verse-preview" class="text-xs italic text-ink-mutedLight dark:text-ink-mutedDark bg-surface-subtleLight dark:bg-surface-subtleDark p-3 rounded-2xl"></p>
+      <textarea id="note-input" rows="4" placeholder="Tulis insight, doa, atau perenunganmu di sini..." class="w-full rounded-2xl border border-stone-200 dark:border-stone-800 bg-transparent p-3.5 text-sm focus:outline-none focus:border-brand"></textarea>
+      <div class="flex justify-end gap-2">
+        <button onclick="closeNoteModal()" class="px-4 py-2 rounded-full text-xs font-medium">Batal</button>
+        <button onclick="saveNote()" class="px-5 py-2 rounded-full bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-xs font-semibold">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="hidden fixed top-20 right-4 sm:right-6 z-50 bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 px-4 py-2.5 rounded-full shadow-lg text-xs font-semibold fade-up"></div>
+
+  <!-- Minimalist Editorial Footer -->
+  <footer id="app-footer" class="border-t border-stone-200/80 dark:border-stone-800/80 mt-20">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+      <div class="space-y-1.5">
+        <div class="flex items-center gap-2">
+          <span class="w-6 h-6 rounded-lg bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 flex items-center justify-center font-serif italic font-bold text-xs">B</span>
+          <span class="font-display font-bold text-sm">BibleSpace</span>
+        </div>
+        <p class="text-xs text-ink-mutedLight dark:text-ink-mutedDark">
+          Alkitab Terjemahan Baru (TB) • Ruang baca, jurnal refleksi, dan studi firman harian.
+        </p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-4 text-xs text-ink-mutedLight dark:text-ink-mutedDark">
+        <button onclick="navigate('read')" class="hover:text-brand transition-colors">Alkitab</button>
+        <span>•</span>
+        <button onclick="navigate('study')" class="hover:text-brand transition-colors">Tafsir &amp; Kamus</button>
+        <span>•</span>
+        <button onclick="navigate('plans')" class="hover:text-brand transition-colors">Progres</button>
+        <span>•</span>
+        <button onclick="navigate('creator')" class="hover:text-brand transition-colors">Kreator</button>
+        <span>•</span>
+        <span>© 2026 BibleSpace</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // =========================================================================
+    // 1. CUSTOM ARCHITECTURAL LINE ICONS
+    // =========================================================================
+    const ICONS = {
+      home: `<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 10.5V20a1 1 0 0 0 1 1h5v-6h6v6h5a1 1 0 0 0 1-1v-9.5L12 3Z"/></svg>`,
+      read: `<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h6a4 4 0 0 1 4 4v12a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v12a3 3 0 0 1 3-3h7z"/></svg>`,
+      study: `<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/><path d="M8 11h6"/><path d="M11 8v6"/></svg>`,
+      quiz: `<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="m16.2 7.8 2.9-2.9"/><path d="M18 12h4"/><path d="m16.2 16.2 2.9 2.9"/><path d="M12 18v4"/><path d="m4.9 19.1 2.9-2.9"/><path d="M2 12h4"/><path d="m4.9 4.9 2.9 2.9"/><circle cx="12" cy="12" r="3"/></svg>`,
+      menu: `<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>`,
+      daily: `<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>`,
+      characters: `<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>`,
+      explorer: `<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>`,
+      plans: `<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`,
+      library: `<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>`,
+      creator: `<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`,
+      settings: `<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
+      sun: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>`,
+      moon: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>`,
+      lexicon: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>`,
+      context: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9v.01"/><path d="M9 12v.01"/><path d="M9 15v.01"/><path d="M9 18v.01"/></svg>`,
+      spark: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v3m0 12v3M3 12h3m12 0h3m-2.6-6.4-2.1 2.1m-8.6 8.6-2.1 2.1m0-12.8 2.1 2.1m8.6 8.6 2.1 2.1"/></svg>`,
+      check: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+      reset: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>`
+    };
+
+    // =========================================================================
+    // 2. EDITORIAL PHOTOGRAPHY CURATION
+    // =========================================================================
+    const PHOTOS = {
+      heroScripture: 'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?auto=format&fit=crop&w=1200&q=80',
+      morningLight: 'https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=1000&q=80',
+      desertStone: 'https://images.unsplash.com/photo-1509316785289-025f5b846b35?auto=format&fit=crop&w=1000&q=80',
+      stillWaters: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1000&q=80',
+      ancientScroll: 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=1000&q=80',
+      jerusalemArch: 'https://images.unsplash.com/photo-1542743408-218cc173cda0?auto=format&fit=crop&w=1000&q=80',
+      mountainDawn: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1000&q=80'
+    };
+
+    // =========================================================================
+    // 3. BILINGUAL DICTIONARY (ID / EN) — BALANCED DESKTOP + MOBILE NAV
+    // =========================================================================
+    const I18N = {
+      id: {
+        desktopNav: [
+          { id: 'home', label: 'Beranda', icon: 'home' },
+          { id: 'read', label: 'Baca', icon: 'read' },
+          { id: 'study', label: 'Studi', icon: 'study' },
+          { id: 'plans', label: 'Progres', icon: 'plans' },
+          { id: 'quiz', label: 'Kuis', icon: 'quiz' },
+          { id: 'more', label: 'Lainnya', icon: 'menu', isDrawer: true }
+        ],
+        primaryNav: [
+          { id: 'home', label: 'Beranda', icon: 'home' },
+          { id: 'read', label: 'Baca', icon: 'read' },
+          { id: 'study', label: 'Studi', icon: 'study' },
+          { id: 'plans', label: 'Progres', icon: 'plans' },
+          { id: 'more', label: 'Menu', icon: 'menu', isDrawer: true }
+        ],
+        moreMenu: [
+          { id: 'quiz', label: 'Kuis Alkitab', desc: 'Uji pemahaman firman', icon: 'quiz' },
+          { id: 'daily', label: 'Kartu Ayat', desc: 'Studio kutipan foto', icon: 'daily' },
+          { id: 'characters', label: 'Tokoh Alkitab', desc: 'Profil & perjalanan iman', icon: 'characters' },
+          { id: 'explorer', label: 'Linimasa', desc: 'Kronologi sejarah Alkitab', icon: 'explorer' },
+          { id: 'library', label: 'Tersimpan', desc: 'Bookmark, stabilo & catatan', icon: 'library' },
+          { id: 'creator', label: 'Tentang Kreator', desc: 'Profil developer & kontak', icon: 'creator' },
+          { id: 'settings', label: 'Pengaturan', desc: 'Bahasa & tema tampilan', icon: 'settings' }
+        ],
+        greeting: 'Jurnal Firman Harian',
+        heroHeadline: 'Baca firman dengan tenang, selami maknanya lebih dalam.',
+        heroSub: 'Alkitab Terjemahan Baru Indonesia lengkap dengan sorotan tafsir bahasa asli, stabilo jurnal, audio pembaca pasal, dan pelacak progres bacaan.',
+        ctaRead: 'Mulai Membaca',
+        ctaDaily: 'Studio Kartu Foto',
+        spotlightTitle: 'Sorotan Ayat & Tafsir',
+        spotlightSub: 'Pilih suasana hati atau topik untuk melihat konteks historis & makna kata aslinya.',
+        meaningTitle: 'Makna Bahasa Asli',
+        tafsirTitle: 'Konteks & Tafsir',
+        reflectionTitle: 'Refleksi Hari Ini',
+        openChapter: 'Buka Pasal',
+        saveVerse: 'Simpan Ayat'
+      },
+      en: {
+        desktopNav: [
+          { id: 'home', label: 'Home', icon: 'home' },
+          { id: 'read', label: 'Read', icon: 'read' },
+          { id: 'study', label: 'Study', icon: 'study' },
+          { id: 'plans', label: 'Progress', icon: 'plans' },
+          { id: 'quiz', label: 'Quiz', icon: 'quiz' },
+          { id: 'more', label: 'More', icon: 'menu', isDrawer: true }
+        ],
+        primaryNav: [
+          { id: 'home', label: 'Home', icon: 'home' },
+          { id: 'read', label: 'Read', icon: 'read' },
+          { id: 'study', label: 'Study', icon: 'study' },
+          { id: 'plans', label: 'Progress', icon: 'plans' },
+          { id: 'more', label: 'Menu', icon: 'menu', isDrawer: true }
+        ],
+        moreMenu: [
+          { id: 'quiz', label: 'Bible Quiz', desc: 'Test scripture knowledge', icon: 'quiz' },
+          { id: 'daily', label: 'Verse Cards', desc: 'Photo quote studio', icon: 'daily' },
+          { id: 'characters', label: 'People', desc: 'Biblical figures & stories', icon: 'characters' },
+          { id: 'explorer', label: 'Timeline', desc: 'Historical chronology', icon: 'explorer' },
+          { id: 'library', label: 'Saved', desc: 'Bookmarks, highlights & notes', icon: 'library' },
+          { id: 'creator', label: 'Creator', desc: 'Developer profile & links', icon: 'creator' },
+          { id: 'settings', label: 'Settings', desc: 'Language & appearance', icon: 'settings' }
+        ],
+        greeting: 'Daily Scripture Journal',
+        heroHeadline: 'Read scripture unhurriedly, understand its deeper meaning.',
+        heroSub: 'Indonesian & English Bible reader crafted with original-language insights, journal highlights, chapter audio, and milestone reading tracking.',
+        ctaRead: 'Start Reading',
+        ctaDaily: 'Photo Card Studio',
+        spotlightTitle: 'Verse Spotlight & Exegesis',
+        spotlightSub: 'Choose a mood or topic to explore historical context and original word meanings.',
+        meaningTitle: 'Original Word Meaning',
+        tafsirTitle: 'Historical Context & Exegesis',
+        reflectionTitle: 'Daily Reflection',
+        openChapter: 'Open Chapter',
+        saveVerse: 'Save Verse'
+      }
+    };
+
+    // =========================================================================
+    // 4. ROTATING SPOTLIGHTS WITH PHOTOGRAPH BACKDROPS
+    // =========================================================================
+    const SPOTLIGHTS = [
+      {
+        moodId: 'Pengharapan',
+        moodEn: 'Hope',
+        bookId: 'JHN',
+        chapter: 1,
+        photo: PHOTOS.morningLight,
+        refId: 'Yohanes 1:5',
+        refEn: 'John 1:5',
+        verseId: 'Terang itu bercahaya di dalam kegelapan dan kegelapan itu tidak menguasainya.',
+        verseEn: 'The light shines in the darkness, and the darkness hasn’t overcome it.',
+        meaningId: 'Kata Yunani "katalambano" berarti "menaklukkan" sekaligus "memahami". Terang Kristus bukan cahaya pasif, melainkan kuasa yang tidak bisa dipadamkan oleh kegelapan apa pun.',
+        meaningEn: 'The Greek verb "katalambano" means both "to overpower" and "to comprehend"—Christ’s light cannot be extinguished by darkness.',
+        tafsirId: 'Yohanes membuka Injilnya dengan gema kisah penciptaan (Kejadian 1:3). Di tengah dunia yang penuh ketidakpastian, Sang Firman (Logos) hadir sebagai sumber hidup.',
+        tafsirEn: 'John opens his Gospel echoing Genesis 1:3, presenting the incarnate Logos as an unquenchable source of life.',
+        reflectionId: 'Sekecil apa pun titik terang pengharapan yang kamu pegang hari ini, ia jauh lebih kuat daripada pekatnya masalah yang sedang kamu hadapi.',
+        reflectionEn: 'No matter how small a beam of hope feels today, it remains stronger than any shadow around you.'
+      },
+      {
+        moodId: 'Tenang dari Cemas',
+        moodEn: 'Peace & Stillness',
+        bookId: 'PSA',
+        chapter: 46,
+        photo: PHOTOS.stillWaters,
+        refId: 'Mazmur 46:11',
+        refEn: 'Psalm 46:10',
+        verseId: 'Diamlah dan ketahuilah, bahwa Akulah Allah! Aku ditinggikan di antara bangsa-bangsa, ditinggikan di bumi!',
+        verseEn: 'Be still, and know that I am God. I will be exalted among the nations. I will be exalted in the earth.',
+        meaningId: 'Kata Ibrani "Raphah" (diamlah) secara harfiah berarti "lepaskan genggamanmu" atau "berhentilah memaksakan kendalimu sendiri".',
+        meaningEn: 'The Hebrew imperative "Raphah" literally means "let go" or "release your anxious grip."',
+        tafsirId: 'Ditulis saat situasi geopolitik sedang kacau dan tembok kota terancam runtuh. Perintah "diam" mengajak kita berhenti panik dan berserah pada Tuhan.',
+        tafsirEn: 'Written amid crisis and upheaval, "be still" calls us to release panic and trust God’s sovereignty.',
+        reflectionId: 'Tarik napas, lepaskan hal-hal yang di luar kendalimu, dan izinkan damai Tuhan menenangkan pikiranmu.',
+        reflectionEn: 'Breathe out what you cannot control and let God’s peace steady your mind.'
+      },
+      {
+        moodId: 'Arah & Keputusan',
+        moodEn: 'Direction & Wisdom',
+        bookId: 'PRO',
+        chapter: 3,
+        photo: PHOTOS.desertStone,
+        refId: 'Amsal 3:5–6',
+        refEn: 'Proverbs 3:5–6',
+        verseId: 'Percayalah kepada TUHAN dengan segenap hatimu, dan janganlah bersandar kepada pengertianmu sendiri. Akuilah Dia dalam segala lakumu, maka Ia akan meluruskan jalanmu.',
+        verseEn: 'Trust in Yahweh with all your heart, and don’t lean on your own understanding. In all your ways acknowledge him, and he will make your paths straight.',
+        meaningId: 'Kata Ibrani "sha’an" (bersandar) menggambarkan seseorang yang menumpukan seluruh berat badannya pada tongkat penopang.',
+        meaningEn: 'The Hebrew word "sha’an" (lean) pictures resting your full weight onto a support.',
+        tafsirId: 'Dalam budaya Ibrani, "hati" (lev) adalah pusat pikiran dan pengambilan keputusan. Melibatkan Tuhan di setiap langkah membuat arah hidup terhindar dari jalan buntu.',
+        tafsirEn: 'In Hebrew thought, the "heart" (lev) is the center of decision-making; acknowledging God clears obstacles from your path.',
+        reflectionId: 'Libatkan Tuhan bukan cuma saat ada masalah besar, tapi juga di keputusan-keputusan kecil kamu hari ini.',
+        reflectionEn: 'Invite God not only into major crises, but into your everyday decisions today.'
+      },
+      {
+        moodId: 'Pemulihan Lelah',
+        moodEn: 'Renewal & Strength',
+        bookId: 'ISA',
+        chapter: 40,
+        photo: PHOTOS.mountainDawn,
+        refId: 'Yesaya 40:31',
+        refEn: 'Isaiah 40:31',
+        verseId: 'Tetapi orang-orang yang menanti-nantikan TUHAN mendapat kekuatan baru: mereka seumpama rajawali yang naik terbang dengan kekuatan sayapnya; mereka berlari dan tidak menjadi lesu, mereka berjalan dan tidak menjadi lelah.',
+        verseEn: 'But those who wait for Yahweh will renew their strength. They will mount up with wings like eagles. They will run, and not be weary. They will walk, and not faint.',
+        meaningId: 'Kata Ibrani "chalaph" (mendapat kekuatan baru) bermakna "menukar"—menukar kelelahan kita dengan kekuatan dari Tuhan.',
+        meaningEn: 'The Hebrew verb "chalaph" (renew) means "to exchange"—trading human exhaustion for divine strength.',
+        tafsirId: 'Rajawali tidak mengepakkan sayap terus-menerus, melainkan memanfaatkan arus angin hangat untuk terbang tinggi tanpa menguras tenaga.',
+        tafsirEn: 'Eagles soar by riding thermal wind currents rather than exhausting themselves with constant flapping.',
+        reflectionId: 'Kalau kamu lagi capek banget mengejar target, berhenti sebentar dan pulihkan tenaga di hadirat Tuhan.',
+        reflectionEn: 'When chasing goals leaves you drained, pause and recharge in God’s presence.'
+      },
+      {
+        moodId: 'Kasih & Relasi',
+        moodEn: 'Love & Relationships',
+        bookId: '1CO',
+        chapter: 13,
+        photo: PHOTOS.jerusalemArch,
+        refId: '1 Korintus 13:4–7',
+        refEn: '1 Corinthians 13:4–7',
+        verseId: 'Kasih itu sabar; kasih itu murah hati; ia tidak cemburu. Ia tidak memegahkan diri dan tidak sombong. Ia tidak melakukan yang tidak sopan dan tidak mencari keuntungan diri sendiri.',
+        verseEn: 'Love is patient and is kind; love doesn’t envy. Love doesn’t brag, is not proud, doesn’t behave itself inappropriately, doesn’t seek its own way.',
+        meaningId: 'Paulus memakai kata "Agape"—komitmen sadar untuk mengusahakan kebaikan orang lain tanpa menuntut balasan.',
+        meaningEn: 'Paul uses "Agape"—a deliberate choice to seek another’s highest good without demanding return.',
+        tafsirId: 'Jemaat Korintus terpecah karena kesombongan rohani. Paulus menegaskan bahwa pencapaian sehebat apa pun tidak berarti tanpa kasih yang rendah hati.',
+        tafsirEn: 'Written to a divided church, Paul shows that spiritual gifts without humble love accomplish nothing.',
+        reflectionId: 'Kasih sejati kelihatan dari cara kita bersabar dan menghargai orang-orang terdekat saat situasi lagi nggak ideal.',
+        reflectionEn: 'Real love shows up in patience and kindness when things aren’t convenient.'
+      }
+    ];
+
+    // =========================================================================
+    // 5. BOOKS METADATA + SCRIPTURE BANK
+    // =========================================================================
+    const BOOKS = [
+      { id: 'GEN', apiId: 'Kej', num: 1, nameId: 'Kejadian', nameEn: 'Genesis', chapters: 50, testament: 'OT', summaryId: 'Awal mula penciptaan, kejatuhan manusia, dan janji perjanjian Allah dengan Abraham, Ishak, Yakub, dan Yusuf.', summaryEn: 'Origins of creation, humanity, sin, and God’s covenant with Abraham, Isaac, Jacob, and Joseph.' },
+      { id: 'EXO', apiId: 'Kel', num: 2, nameId: 'Keluaran', nameEn: 'Exodus', chapters: 40, testament: 'OT', summaryId: 'Pembebasan bangsa Israel dari perbudakan Mesir melalui Musa dan pemberian Hukum Taurat di Sinai.', summaryEn: 'Israel’s liberation from Egyptian slavery under Moses and the Sinai Covenant.' },
+      { id: 'PSA', apiId: 'Mzm', num: 19, nameId: 'Mazmur', nameEn: 'Psalms', chapters: 150, testament: 'OT', summaryId: 'Kumpulan doa, nyanyian pujian, ratapan jujur, dan pengharapan umat kepada Tuhan.', summaryEn: 'Prayers, hymns of praise, honest laments, and hope in God.' },
+      { id: 'PRO', apiId: 'Ams', num: 20, nameId: 'Amsal', nameEn: 'Proverbs', chapters: 31, testament: 'OT', summaryId: 'Panduan hikmat praktis untuk pengambilan keputusan, perkataan, integritas, dan karakter sehari-hari.', summaryEn: 'Practical wisdom for daily decisions, speech, integrity, and character.' },
+      { id: 'ECC', apiId: 'Pkh', num: 21, nameId: 'Pengkhotbah', nameEn: 'Ecclesiastes', chapters: 12, testament: 'OT', summaryId: 'Refleksi filosofis tentang makna hidup, waktu, dan kebahagiaan sejati di dalam Tuhan.', summaryEn: 'Philosophical reflection on life’s meaning, time, and true purpose in God.' },
+      { id: 'ISA', apiId: 'Yes', num: 23, nameId: 'Yesaya', nameEn: 'Isaiah', chapters: 66, testament: 'OT', summaryId: 'Nubuat penghiburan bagi umat yang lelah serta janji kedatangan Sang Juruselamat.', summaryEn: 'Prophecies of comfort for the weary and the promise of the coming Savior.' },
+      { id: 'RUT', apiId: 'Rut', num: 8, nameId: 'Rut', nameEn: 'Ruth', chapters: 4, testament: 'OT', summaryId: 'Kisah kesetiaan dan pemulihan keluarga yang menghubungkan Rut ke garis keturunan Raja Daud.', summaryEn: 'A story of loyalty and restoration connecting Ruth to King David’s lineage.' },
+      { id: 'DAN', apiId: 'Dan', num: 27, nameId: 'Daniel', nameEn: 'Daniel', chapters: 12, testament: 'OT', summaryId: 'Integritas anak muda di negeri asing dan penglihatan tentang kerajaan Allah yang kekal.', summaryEn: 'Youthful integrity in a foreign land and visions of God’s eternal kingdom.' },
+      { id: 'MAT', apiId: 'Mat', num: 40, nameId: 'Matius', nameEn: 'Matthew', chapters: 28, testament: 'NT', summaryId: 'Yesus sebagai Raja-Mesias yang menggenapi nubuat dan menyampaikan Khotbah di Bukit.', summaryEn: 'Jesus as Messiah-King fulfilling prophecy and teaching the Sermon on the Mount.' },
+      { id: 'MRK', apiId: 'Mrk', num: 41, nameId: 'Markus', nameEn: 'Mark', chapters: 16, testament: 'NT', summaryId: 'Kisah dinamis tentang Yesus yang melayani dengan penuh kuasa dan kasih.', summaryEn: 'Fast-paced narrative of Jesus serving with power and compassion.' },
+      { id: 'LUK', apiId: 'Luk', num: 42, nameId: 'Lukas', nameEn: 'Luke', chapters: 24, testament: 'NT', summaryId: 'Catatan historis yang menyoroti kepedulian Yesus bagi semua orang tanpa terkecuali.', summaryEn: 'Historical account highlighting Jesus’ compassion for everyone.' },
+      { id: 'JHN', apiId: 'Yoh', num: 43, nameId: 'Yohanes', nameEn: 'John', chapters: 21, testament: 'NT', summaryId: 'Injil reflektif tentang Yesus sebagai Firman (Logos) yang memberi hidup dan terang.', summaryEn: 'Reflective Gospel revealing Jesus as the Word (Logos) bringing life and light.' },
+      { id: 'ACT', apiId: 'Kis', num: 44, nameId: 'Kisah Para Rasul', nameEn: 'Acts', chapters: 28, testament: 'NT', summaryId: 'Perjalanan gereja mula-mula yang dipimpin Roh Kudus dari Yerusalem hingga Roma.', summaryEn: 'Journey of the early Church led by the Holy Spirit from Jerusalem to Rome.' },
+      { id: 'ROM', apiId: 'Rm', num: 45, nameId: 'Surat Roma', nameEn: 'Romans', chapters: 16, testament: 'NT', summaryId: 'Surat Rasul Paulus tentang pembenaran oleh iman, kasih karunia, dan hidup baru dalam Kristus.', summaryEn: 'Paul’s letter on justification by faith, grace, and new life in Christ.' },
+      { id: '1CO', apiId: '1Kor', num: 46, nameId: 'Surat 1 Korintus', nameEn: '1 Corinthians', chapters: 16, testament: 'NT', summaryId: 'Surat Paulus tentang kesatuan jemaat, karunia rohani, dan himne kasih sejati.', summaryEn: 'Paul’s letter on church unity, spiritual gifts, and the hymn of love.' },
+      { id: '2CO', apiId: '2Kor', num: 47, nameId: 'Surat 2 Korintus', nameEn: '2 Corinthians', chapters: 13, testament: 'NT', summaryId: 'Surat Paulus tentang penghiburan Allah di tengah penderitaan dan kekuatan dalam kelemahan.', summaryEn: 'Paul’s letter on God’s comfort in suffering and strength in weakness.' },
+      { id: 'GAL', apiId: 'Gal', num: 48, nameId: 'Surat Galatia', nameEn: 'Galatians', chapters: 6, testament: 'NT', summaryId: 'Surat tentang kemerdekaan sejati dalam Kristus dan hidup yang dipimpin oleh buah Roh.', summaryEn: 'Letter on true freedom in Christ and living by the fruit of the Spirit.' },
+      { id: 'EPH', apiId: 'Ef', num: 49, nameId: 'Surat Efesus', nameEn: 'Ephesians', chapters: 6, testament: 'NT', summaryId: 'Surat tentang identitas orang percaya di dalam Kristus dan perlengkapan senjata Allah.', summaryEn: 'Letter on believers’ identity in Christ and the full armor of God.' },
+      { id: 'PHP', apiId: 'Flp', num: 50, nameId: 'Surat Filipi', nameEn: 'Philippians', chapters: 4, testament: 'NT', summaryId: 'Surat sukacita sejati, kerendahan hati Kristus, dan ketenangan batin dalam segala keadaan.', summaryEn: 'Letter on true joy, Christ’s humility, and inner peace in every circumstance.' },
+      { id: 'COL', apiId: 'Kol', num: 51, nameId: 'Surat Kolose', nameEn: 'Colossians', chapters: 4, testament: 'NT', summaryId: 'Surat tentang keutamaan Kristus atas segala ciptaan dan hidup baru di dalam Dia.', summaryEn: 'Letter on the supremacy of Christ over all creation and new life in Him.' },
+      { id: '1TH', apiId: '1Tes', num: 52, nameId: 'Surat 1 Tesalonika', nameEn: '1 Thessalonians', chapters: 5, testament: 'NT', summaryId: 'Surat pengharapan akan kedatangan Kristus kembali dan dorongan untuk hidup kudus.', summaryEn: 'Letter of hope in Christ’s return and encouragement to live faithfully.' },
+      { id: '2TI', apiId: '2Tim', num: 55, nameId: 'Surat 2 Timotius', nameEn: '2 Timothy', chapters: 4, testament: 'NT', summaryId: 'Surat warisan terakhir Paulus kepada Timotius agar tetap teguh menjaga iman dan panggilan.', summaryEn: 'Paul’s final charge to Timothy to guard the faith and endure with courage.' },
+      { id: 'HEB', apiId: 'Ibr', num: 58, nameId: 'Surat Ibrani', nameEn: 'Hebrews', chapters: 13, testament: 'NT', summaryId: 'Surat tentang keunggulan Kristus sebagai Imam Besar Agung dan galeri saksi-saksi iman.', summaryEn: 'Letter on Christ as Supreme High Priest and the great cloud of witnesses of faith.' },
+      { id: 'JAS', apiId: 'Yak', num: 59, nameId: 'Surat Yakobus', nameEn: 'James', chapters: 5, testament: 'NT', summaryId: 'Surat hikmat praktis tentang iman yang hidup melalui perbuatan nyata dan pengendalian lidah.', summaryEn: 'Practical letter on living faith expressed through deeds and wise speech.' },
+      { id: '1PE', apiId: '1Ptr', num: 60, nameId: 'Surat 1 Petrus', nameEn: '1 Peter', chapters: 5, testament: 'NT', summaryId: 'Surat pengharapan bagi umat Tuhan yang menghadapi ujian agar tetap berdiri teguh dalam kasih karunia.', summaryEn: 'Letter of living hope for believers facing trials to stand firm in grace.' },
+      { id: '1JN', apiId: '1Yoh', num: 62, nameId: 'Surat 1 Yohanes', nameEn: '1 John', chapters: 5, testament: 'NT', summaryId: 'Surat tentang Allah adalah kasih, berjalan dalam terang, dan kepastian hidup kekal.', summaryEn: 'Letter proclaiming God is love, walking in the light, and assurance of eternal life.' },
+      { id: 'REV', apiId: 'Why', num: 66, nameId: 'Wahyu', nameEn: 'Revelation', chapters: 22, testament: 'NT', summaryId: 'Penglihatan penuh harapan tentang pemulihan segala sesuatu dan langit bumi yang baru.', summaryEn: 'Hopeful vision of ultimate restoration and a new heaven and earth.' }
+    ];
+
+    const ID_SCRIPTURE_BANK = {
+      'JHN:1': [
+        { verse: 1, text: 'Pada mulanya adalah Firman; Firman itu bersama-sama dengan Allah dan Firman itu adalah Allah.' },
+        { verse: 2, text: 'Ia pada mulanya bersama-sama dengan Allah.' },
+        { verse: 3, text: 'Segala sesuatu dijadikan oleh Dia dan tanpa Dia tidak ada suatupun yang telah jadi dari segala yang telah dijadikan.' },
+        { verse: 4, text: 'Dalam Dia ada hidup dan hidup itu adalah terang manusia.' },
+        { verse: 5, text: 'Terang itu bercahaya di dalam kegelapan dan kegelapan itu tidak menguasainya.' },
+        { verse: 9, text: 'Terang yang sesungguhnya, yang menerangi setiap orang, sedang datang ke dalam dunia.' },
+        { verse: 12, text: 'Tetapi semua orang yang menerima-Nya diberi-Nya kuasa supaya menjadi anak-anak Allah, yaitu mereka yang percaya dalam nama-Nya.' },
+        { verse: 14, text: 'Firman itu telah menjadi manusia, dan diam di antara kita, dan kita telah melihat kemuliaan-Nya, yaitu kemuliaan yang diberikan kepada-Nya sebagai Anak Tunggal Bapa, penuh kasih karunia dan kebenaran.' }
+      ],
+      'ROM:1': [
+        { verse: 1, text: 'Dari Paulus, hamba Kristus Yesus, yang dipanggil menjadi rasul dan dikuduskan untuk memberitakan Injil Allah.' },
+        { verse: 7, text: 'Kepada kamu sekalian yang tinggal di Roma, yang dikasihi Allah, yang dipanggil dan dijadikan orang-orang kudus: Kasih karunia menyertai kamu dan damai sejahtera dari Allah, Bapa kita, dan dari Tuhan Yesus Kristus.' },
+        { verse: 16, text: 'Sebab aku mempunyai keyakinan yang kokoh dalam Injil, karena Injil adalah kekuatan Allah yang menyelamatkan setiap orang yang percaya, pertama-tama orang Yahudi, tetapi juga orang Yunani.' },
+        { verse: 17, text: 'Sebab di dalamnya nyata kebenaran Allah, yang bertolak dari iman dan memimpin kepada iman, seperti ada tertulis: "Orang benar akan hidup oleh iman."' }
+      ],
+      'ROM:8': [
+        { verse: 1, text: 'Demikianlah sekarang tidak ada penghukuman bagi mereka yang ada di dalam Kristus Yesus.' },
+        { verse: 28, text: 'Kita tahu sekarang, bahwa Allah turut bekerja dalam segala sesuatu untuk mendatangkan kebaikan bagi mereka yang mengasihi Dia, yaitu bagi mereka yang terpanggil sesuai dengan rencana Allah.' },
+        { verse: 31, text: 'Sebab itu apakah yang akan kita katakan tentang semuanya itu? Jika Allah di pihak kita, siapakah yang akan melawan kita?' },
+        { verse: 37, text: 'Tetapi dalam semuanya itu kita lebih dari pada orang-orang yang menang, oleh Dia yang telah mengasihi kita.' },
+        { verse: 38, text: 'Sebab aku yakin, bahwa baik maut, maupun hidup, baik malaikat-malaikat, maupun pemerintah-pemerintah, baik yang ada sekarang, maupun yang akan datang,' },
+        { verse: 39, text: 'atau kuasa-kuasa, baik yang di atas, maupun yang di bawah, ataupun sesuatu makhluk lain, tidak akan dapat memisahkan kita dari kasih Allah, yang ada dalam Kristus Yesus, Tuhan kita.' }
+      ],
+      'ROM:12': [
+        { verse: 1, text: 'Karena itu, saudara-saudara, demi kemurahan Allah aku menasihatkan kamu, supaya kamu mempersembahkan tubuhmu sebagai persembahan yang hidup, yang kudus dan yang berkenan kepada Allah: itu adalah ibadahmu yang sejati.' },
+        { verse: 2, text: 'Janganlah kamu menjadi serupa dengan dunia ini, tetapi berubahlah oleh pembaharuan budimu, sehingga kamu dapat membedakan manakah kehendak Allah: apa yang baik, yang berkenan kepada Allah dan yang sempurna.' },
+        { verse: 12, text: 'Bersukacitalah dalam pengharapan, sabarlah dalam kesesakan, dan bertekunlah dalam doa!' }
+      ],
+      '1CO:13': [
+        { verse: 1, text: 'Sekalipun aku dapat berkata-kata dengan semua bahasa manusia dan bahasa malaikat, tetapi jika aku tidak mempunyai kasih, aku sama dengan gong yang berkumandang dan canang yang gemerincing.' },
+        { verse: 4, text: 'Kasih itu sabar; kasih itu murah hati; ia tidak cemburu. Ia tidak memegahkan diri dan tidak sombong.' },
+        { verse: 5, text: 'Ia tidak melakukan yang tidak sopan dan tidak mencari keuntungan diri sendiri. Ia tidak pemarah dan tidak menyimpan kesalahan orang lain.' },
+        { verse: 6, text: 'Ia tidak bersukacita karena ketidakadilan, tetapi karena kebenaran.' },
+        { verse: 7, text: 'Ia menutupi segala sesuatu, percaya segala sesuatu, mengharapkan segala sesuatu, sabar menanggung segala sesuatu.' },
+        { verse: 13, text: 'Demikianlah tinggal ketiga hal ini, yaitu iman, pengharapan dan kasih, dan yang paling besar di antaranya ialah kasih.' }
+      ],
+      'GAL:5': [
+        { verse: 1, text: 'Supaya kita sungguh-sungguh merdeka, Kristus telah memerdekakan kita. Karena itu berdirilah teguh dan jangan mau lagi dikenakan kuk perhambaan.' },
+        { verse: 22, text: 'Tetapi buah Roh ialah: kasih, sukacita, damai sejahtera, kesabaran, kemurahan, kebaikan, kesetiaan,' },
+        { verse: 23, text: 'kelemahlembutan, penguasaan diri. Tidak ada hukum yang menentang hal-hal itu.' }
+      ],
+      'EPH:6': [
+        { verse: 10, text: 'Akhirnya, hendaklah kamu kuat di dalam Tuhan, di dalam kekuatan kuasa-Nya.' },
+        { verse: 11, text: 'Kenakanlah seluruh perlengkapan senjata Allah, supaya kamu dapat bertahan melawan tipu muslihat Iblis;' },
+        { verse: 16, text: 'dalam segala keadaan pergunakanlah perisai iman, sebab dengan perisai itu kamu akan dapat memadamkan semua panah api dari si jahat,' },
+        { verse: 17, text: 'dan terimalah ketopong keselamatan dan pedang Roh, yaitu firman Allah,' }
+      ],
+      'PHP:1': [
+        { verse: 3, text: 'Aku mengucap syukur kepada Allahku setiap kali aku mengingat kamu.' },
+        { verse: 6, text: 'Akan hal ini aku yakin sepenuhnya, yaitu Ia, yang memulai pekerjaan yang baik di antara kamu, akan meneruskannya sampai pada akhirnya pada hari Kristus Yesus.' },
+        { verse: 21, text: 'Karena bagiku hidup adalah Kristus dan mati adalah keuntungan.' }
+      ],
+      'PHP:4': [
+        { verse: 4, text: 'Bersukacitalah senantiasa dalam Tuhan! Sekali lagi kukatakan: Bersukacitalah!' },
+        { verse: 6, text: 'Janganlah hendaknya kamu kuatir tentang apapun juga, tetapi nyatakanlah dalam segala hal keinginanmu kepada Allah dalam doa dan permohonan dengan ucapan syukur.' },
+        { verse: 7, text: 'Damai sejahtera Allah, yang melampaui segala akal, akan memelihara hati dan pikiranmu dalam Kristus Yesus.' },
+        { verse: 8, text: 'Jadi akhirnya, saudara-saudara, semua yang benar, semua yang mulia, semua yang adil, semua yang suci, semua yang manis, semua yang sedap didengar, semua yang disebut kebajikan dan patut dipuji, pikirkanlah semuanya itu.' },
+        { verse: 13, text: 'Segala perkara dapat kutanggung di dalam Dia yang memberi kekuatan kepadaku.' }
+      ],
+      'COL:3': [
+        { verse: 2, text: 'Pikirkanlah perkara yang di atas, bukan yang di bumi.' },
+        { verse: 14, text: 'Dan di atas semuanya itu: kenakanlah kasih, sebagai pengikat yang mempersatukan dan menyempurnakan.' },
+        { verse: 15, text: 'Hendaklah damai sejahtera Kristus memerintah dalam hatimu, karena untuk itulah kamu telah dipanggil menjadi satu tubuh. Dan bersyukurlah.' },
+        { verse: 23, text: 'Apapun juga yang kamu perbuat, perbuatlah dengan segenap hatimu seperti untuk Tuhan dan bukan untuk manusia.' }
+      ],
+      'HEB:11': [
+        { verse: 1, text: 'Iman adalah dasar dari segala sesuatu yang kita harapkan dan bukti dari segala sesuatu yang tidak kita lihat.' },
+        { verse: 6, text: 'Tetapi tanpa iman tidak mungkin orang berkenan kepada Allah. Sebab barangsiapa berpaling kepada Allah, ia harus percaya bahwa Allah ada, dan bahwa Allah memberi upah kepada orang yang sungguh-sungguh mencari Dia.' }
+      ],
+      'JAS:1': [
+        { verse: 2, text: 'Saudara-saudaraku, anggaplah sebagai suatu kebahagiaan, apabila kamu jatuh ke dalam berbagai-bagai pencobaan,' },
+        { verse: 3, text: 'sebab kamu tahu, bahwa ujian terhadap imanmu itu menghasilkan ketekunan.' },
+        { verse: 5, text: 'Tetapi apabila di antara kamu ada yang kekurangan hikmat, hendaklah ia memintakannya kepada Allah, — yang memberikan kepada semua orang dengan murah hati dan dengan tidak membangkit-bangkit —, maka hal itu akan diberikan kepadanya.' },
+        { verse: 19, text: 'Hai saudara-saudara yang kukasihi, ingatlah hal ini: setiap orang hendaklah cepat untuk mendengar, tetapi lambat untuk berkata-kata, dan juga lambat untuk marah;' }
+      ],
+      '1JN:4': [
+        { verse: 7, text: 'Saudara-saudaraku yang kekasih, marilah kita saling mengasihi, sebab kasih itu berasal dari Allah; dan setiap orang yang mengasihi, lahir dari Allah dan mengenal Allah.' },
+        { verse: 8, text: 'Barangsiapa tidak mengasihi, ia tidak mengenal Allah, sebab Allah adalah kasih.' },
+        { verse: 18, text: 'Di dalam kasih tidak ada ketakutan: kasih yang sempurna melenyapkan ketakutan; sebab ketakutan mengandung hukuman dan barangsiapa takut, ia tidak sempurna di dalam kasih.' }
+      ],
+      'PSA:23': [
+        { verse: 1, text: 'TUHAN adalah gembalaku, takkan kekurangan aku.' },
+        { verse: 2, text: 'Ia membaringkan aku di padang yang berumput hijau, Ia membimbing aku ke air yang tenang;' },
+        { verse: 3, text: 'Ia menyegarkan jiwaku. Ia menuntun aku di jalan yang benar oleh karena nama-Nya.' },
+        { verse: 4, text: 'Sekalipun aku berjalan dalam lembah kekelaman, aku tidak takut bahaya, sebab Engkau besertaku; gada-Mu dan tongkat-Mu, itulah yang menghibur aku.' },
+        { verse: 5, text: 'Engkau menyediakan hidangan bagiku, di hadapan lawanku; Engkau mengurapi kepalaku dengan minyak; pialaku penuh melimpah.' },
+        { verse: 6, text: 'Kebajikan dan kemurahan belaka akan mengikuti aku, seumur hidupku; dan aku akan diam dalam rumah TUHAN sepanjang masa.' }
+      ],
+      'PSA:46': [
+        { verse: 1, text: 'Allah itu bagi kita tempat perlindungan dan kekuatan, sebagai penolong dalam kesesakan sangat terbukti.' },
+        { verse: 2, text: 'Sebab itu kita tidak akan takut, sekalipun bumi berubah, sekalipun gunung-gunung goncang di dalam laut;' },
+        { verse: 10, text: 'Berhentilah berperang dan ketahuilah, bahwa Akulah Allah! Aku ditinggikan di antara bangsa-bangsa, ditinggikan di bumi!' },
+        { verse: 11, text: 'TUHAN semesta alam menyertai kita, kota benteng kita ialah Allah Yakub.' }
+      ],
+      'PRO:3': [
+        { verse: 1, text: 'Hai anakku, janganlah engkau melupakan ajaranku, dan biarlah hatimu memelihara perintahku,' },
+        { verse: 3, text: 'Janganlah kiranya kasih dan setia meninggalkan engkau! Kalungkanlah itu pada lehermu, tuliskanlah itu pada loh hatimu,' },
+        { verse: 5, text: 'Percayalah kepada TUHAN dengan segenap hatimu, dan janganlah bersandar kepada pengertianmu sendiri.' },
+        { verse: 6, text: 'Akuilah Dia dalam segala lakumu, maka Ia akan meluruskan jalanmu.' }
+      ],
+      'GEN:1': [
+        { verse: 1, text: 'Pada mulanya Allah menciptakan langit dan bumi.' },
+        { verse: 2, text: 'Bumi belum berbentuk dan kosong; gelap gulita menutupi samudera raya, dan Roh Allah melayang-layang di atas permukaan air.' },
+        { verse: 3, text: 'Berfirmanlah Allah: "Jadilah terang." Lalu terang itu jadi.' },
+        { verse: 4, text: 'Allah melihat bahwa terang itu baik, lalu dipisahkan-Nyalah terang itu dari gelap.' },
+        { verse: 5, text: 'Dan Allah menamai terang itu siang, dan gelap itu malam. Jadilah petang dan jadilah pagi, itulah hari pertama.' }
+      ],
+      'MAT:5': [
+        { verse: 3, text: 'Berbahagialah orang yang miskin di hadapan Allah, karena merekalah yang empunya Kerajaan Sorga.' },
+        { verse: 4, text: 'Berbahagialah orang yang berdukacita, karena mereka akan dihibur.' },
+        { verse: 5, text: 'Berbahagialah orang yang lemah lembut, karena mereka akan memiliki bumi.' },
+        { verse: 6, text: 'Berbahagialah orang yang lapar dan haus akan kebenaran, karena mereka akan dipuaskan.' },
+        { verse: 7, text: 'Berbahagialah orang yang murah hatinya, karena mereka akan beroleh kemurahan.' },
+        { verse: 8, text: 'Berbahagialah orang yang suci hatinya, karena mereka akan melihat Allah.' },
+        { verse: 9, text: 'Berbahagialah orang yang membawa damai, karena mereka akan disebut anak-anak Allah.' }
+      ]
+    };
+
+    const TRANSLATIONS = [
+      { code: 'id', name: 'TB • Alkitab Indonesia' },
+      { code: 'web', name: 'WEB • World English Bible' },
+      { code: 'kjv', name: 'KJV • King James Version' },
+      { code: 'asv', name: 'ASV • American Standard' }
+    ];
+
+    const CHARACTERS = [
+      { name: 'Musa', role: 'Pemimpin & Nabi', era: 'c. 1400–1200 SM', photo: PHOTOS.desertStone, bio: 'Dibesarkan di istana Mesir, dipanggil Tuhan lewat semak menyala untuk memimpin pembebasan Israel.', events: ['Semak Menyala di Horeb', 'Menyeberangi Laut Teberau', 'Menerima Loh Batu di Sinai'], refs: ['Keluaran 3:14', 'Keluaran 14:21'] },
+      { name: 'Rut', role: 'Simbol Kesetiaan', era: 'Zaman Hakim-Hakim', photo: PHOTOS.morningLight, bio: 'Perempuan Moab yang setia mendampingi Naomi dan menjadi bagian dari silsilah Raja Daud.', events: ['Janji Kesetiaan pada Naomi', 'Ladang Boas di Betlehem'], refs: ['Rut 1:16–17', 'Rut 4:13'] },
+      { name: 'Raja Daud', role: 'Pemazmur & Raja', era: 'c. 1010–970 SM', photo: PHOTOS.mountainDawn, bio: 'Dari gembala domba menjadi raja Israel yang menulis banyak Mazmur jujur tentang iman dan pemulihan.', events: ['Mengalahkan Goliat', 'Menulis Mazmur 23 & 51'], refs: ['1 Samuel 16:7', 'Mazmur 23:1'] },
+      { name: 'Ester', role: 'Ratu Pemberani', era: 'Abad ke-5 SM', photo: PHOTOS.jerusalemArch, bio: 'Mempertaruhkan nyawanya di istana Persia demi menyelamatkan seluruh bangsanya dari pemusnahan.', events: ['Puasa Tiga Hari', 'Mengungkap Rencana Haman'], refs: ['Ester 4:14', 'Ester 7:3'] },
+      { name: 'Maria', role: 'Ibu Yesus', era: 'Abad ke-1 M', photo: PHOTOS.stillWaters, bio: 'Menyambut panggilan Tuhan dengan kerendahan hati dan keteguhan iman dari Nazaret hingga Golgota.', events: ['Kabar Malaikat Gabriel', 'Nyanyian Pujian Maria'], refs: ['Lukas 1:38', 'Yohanes 19:25'] },
+      { name: 'Rasul Paulus', role: 'Penulis Surat Rasuli', era: 'c. 5–67 M', photo: PHOTOS.ancientScroll, bio: 'Mengalami perjumpaan yang mengubah hidupnya total di jalan ke Damsyik dan menulis 13 surat Perjanjian Baru.', events: ['Pertobatan di Damsyik', 'Menulis Surat Roma & Filipi'], refs: ['Kisah 9:1–19', 'Filipi 4:13'] }
+    ];
+
+    const GLOSSARY = [
+      { term: 'Hesed (Ibrani)', def: 'Kasih setia yang konsisten, komitmen perjanjian, dan kebaikan hati yang tidak mudah menyerah.' },
+      { term: 'Logos (Yunani)', def: 'Firman atau makna ilahi; dipakai Yohanes untuk menggambarkan Yesus sebagai penyataan diri Allah.' },
+      { term: 'Shalom (Ibrani)', def: 'Damai sejahtera yang utuh—bukan cuma bebas konflik, tapi jiwa yang pulih, tenang, dan selaras.' },
+      { term: 'Agape (Yunani)', def: 'Kasih tanpa syarat yang berfokus memberi kebaikan bagi sesama tanpa pamrih.' },
+      { term: 'Raphah (Ibrani)', def: 'Melepaskan genggaman, berhenti panik berusaha sendiri, dan beristirahat dalam kendali Tuhan.' },
+      { term: 'Charis (Yunani)', def: 'Kasih karunia—hadiah kebaikan Tuhan yang diberikan secara cuma-cuma.' }
+    ];
+
+    const TIMELINE_EVENTS = [
+      { period: 'Era Leluhur', date: 'c. 2000–1700 SM', title: 'Panggilan Abraham', location: 'Ur → Kanaan', photo: PHOTOS.desertStone, desc: 'Awal perjalanan iman dan janji berkat bagi seluruh bangsa.' },
+      { period: 'Keluaran', date: 'c. 1446 / 1260 SM', title: 'Pembebasan & Sinai', location: 'Mesir → Gunung Sinai', photo: PHOTOS.mountainDawn, desc: 'Israel keluar dari perbudakan dan menerima prinsip hidup dari Tuhan.' },
+      { period: 'Kerajaan Bersatu', date: 'c. 1050–930 SM', title: 'Era Daud & Salomo', location: 'Yerusalem', photo: PHOTOS.jerusalemArch, desc: 'Masa keemasan sastra Mazmur, Amsal, dan pembangunan Bait Suci.' },
+      { period: 'Pembuangan & Pemulihan', date: '586–516 SM', title: 'Harapan di Tengah Ujian', location: 'Babel → Yudea', photo: PHOTOS.ancientScroll, desc: 'Para nabi seperti Yesaya dan Daniel menguatkan iman umat hingga masa pemulihan.' },
+      { period: 'Era Injil', date: 'c. 4 SM–30 M', title: 'Kehidupan & Kebangkitan Yesus', location: 'Galilea & Yerusalem', photo: PHOTOS.morningLight, desc: 'Kabar baik Kerajaan Allah, kasih karunia, salib, dan kebangkitan.' },
+      { period: 'Gereja Mula-Mula', date: '30–95 M', title: 'Pentakosta & Surat Rasuli', location: 'Yerusalem → Roma', photo: PHOTOS.stillWaters, desc: 'Komunitas percaya bertumbuh dan menyebarkan pesan pengharapan ke seluruh Mediterania.' }
+    ];
+
+    const QUIZ_QUESTIONS = [
+      {
+        category: 'Bahasa Asli • Mazmur',
+        ref: 'Mazmur 46:11',
+        q: 'Kata Ibrani "Raphah" dalam Mazmur 46:11 ("Diamlah dan ketahuilah...") secara harfiah berarti...',
+        options: ['Berteriaklah dengan lantang', 'Lepaskan genggaman / berhenti panik', 'Berlari secepat mungkin', 'Menutup pintu rapat-rapat'],
+        answer: 1,
+        exp: '"Raphah" berarti melepaskan genggaman cemas dan berhenti memaksakan kekuatan diri sendiri.'
+      },
+      {
+        category: 'Surat Rasul Paulus',
+        ref: 'Filipi 4:6–7',
+        q: 'Surat Perjanjian Baru mana yang memuat nasihat "Janganlah hendaknya kamu kuatir tentang apapun juga"?',
+        options: ['Surat Filipi', 'Kitab Wahyu', 'Kisah Para Rasul', 'Injil Matius'],
+        answer: 0,
+        exp: 'Filipi 4:6–7 mengajak kita membawa kekhawatiran dalam doa dengan ucapan syukur.'
+      },
+      {
+        category: 'Sejarah Perjanjian Lama',
+        ref: '2 Samuel 12:1–7',
+        q: 'Siapa nabi yang menegur Raja Daud lewat perumpamaan anak domba milik orang miskin?',
+        options: ['Nabi Elia', 'Nabi Natan', 'Nabi Yunus', 'Nabi Amos'],
+        answer: 1,
+        exp: 'Nabi Natan menyampaikan perumpamaan itu di 2 Samuel 12 untuk menyadarkan Daud.'
+      },
+      {
+        category: 'Surat-Surat Umum',
+        ref: 'Yakobus 1:19',
+        q: 'Dalam Surat Yakobus 1:19, setiap orang dinasihatkan untuk cepat melakukan apa?',
+        options: ['Cepat berbicara', 'Cepat menghakimi', 'Cepat untuk mendengar', 'Cepat membalas'],
+        answer: 2,
+        exp: 'Yakobus 1:19 berkata: "setiap orang hendaklah cepat untuk mendengar, tetapi lambat untuk berkata-kata, dan juga lambat untuk marah."'
+      },
+      {
+        category: 'Bahasa Asli • Surat Korintus',
+        ref: '1 Korintus 13:4',
+        q: 'Apa arti kata Yunani "Agape" yang dipakai Paulus dalam 1 Korintus 13?',
+        options: ['Rasa kagum sesaat', 'Kasih tanpa pamrih demi kebaikan sesama', 'Persahabatan biasa', 'Kemenangan perang'],
+        answer: 1,
+        exp: 'Agape adalah kasih yang berakar pada komitmen tulus untuk kebaikan orang lain.'
+      },
+      {
+        category: 'Surat Roma',
+        ref: 'Roma 8:28',
+        q: 'Menurut Surat Roma 8:28, Allah turut bekerja dalam segala sesuatu untuk mendatangkan apa bagi mereka yang mengasihi Dia?',
+        options: ['Kekayaan materi instan', 'Kebaikan sesuai rencana Allah', 'Ketenaran di dunia', 'Bebas dari semua ujian'],
+        answer: 1,
+        exp: 'Roma 8:28 menegaskan Allah turut bekerja dalam segala sesuatu untuk mendatangkan kebaikan bagi mereka yang mengasihi Dia.'
+      }
+    ];
+
+    // =========================================================================
+    // 6. NON-CALENDAR MILESTONE TRACKS (DEFAULT 0 UNTIL USER ACTUALLY READS!)
+    // =========================================================================
+    const READING_TRACKS = [
+      {
+        id: 'foundation',
+        tagId: 'Jalur Pemula',
+        tagEn: 'Starter Path',
+        titleId: 'Fondasi Iman & Injil',
+        titleEn: 'Foundations & Gospels',
+        descId: 'Langkah awal mengenal terang Kristus dan hidup baru dalam iman.',
+        descEn: 'First steps into the light of Christ and new life in faith.',
+        milestones: [
+          { id: 'm1', labelId: 'Firman yang Menjadi Manusia', labelEn: 'The Word Made Flesh', refId: 'Yohanes 1', refEn: 'John 1', bookId: 'JHN', ch: 1 },
+          { id: 'm2', labelId: 'Hidup yang Dipimpin Roh', labelEn: 'Life Through the Spirit', refId: 'Surat Roma 8', refEn: 'Romans 8', bookId: 'ROM', ch: 8 },
+          { id: 'm3', labelId: 'Sukacita & Ketenangan Batin', labelEn: 'Joy & Inner Peace', refId: 'Surat Filipi 4', refEn: 'Philippians 4', bookId: 'PHP', ch: 4 },
+          { id: 'm4', labelId: 'Makna Kasih Sejati', labelEn: 'The Way of Love', refId: '1 Korintus 13', refEn: '1 Corinthians 13', bookId: '1CO', ch: 13 }
+        ]
+      },
+      {
+        id: 'wisdom',
+        tagId: 'Hikmat Harian',
+        tagEn: 'Daily Wisdom',
+        titleId: 'Ketenangan Jiwa & Hikmat',
+        titleEn: 'Stillness & Practical Wisdom',
+        descId: 'Bacaan reflektif untuk ketenangan batin, arah hidup, dan integritas.',
+        descEn: 'Reflective passages for inner calm, direction, and integrity.',
+        milestones: [
+          { id: 'w1', labelId: 'Tuhan adalah Gembalaku', labelEn: 'The Lord is My Shepherd', refId: 'Mazmur 23', refEn: 'Psalm 23', bookId: 'PSA', ch: 23 },
+          { id: 'w2', labelId: 'Diam & Percaya kepada Allah', labelEn: 'Be Still & Know God', refId: 'Mazmur 46', refEn: 'Psalm 46', bookId: 'PSA', ch: 46 },
+          { id: 'w3', labelId: 'Jangan Bersandar pada Diri Sendiri', labelEn: 'Trust With All Your Heart', refId: 'Amsal 3', refEn: 'Proverbs 3', bookId: 'PRO', ch: 3 },
+          { id: 'w4', labelId: 'Iman yang Hidup & Dewasa', labelEn: 'Faith in Action', refId: 'Surat Yakobus 1', refEn: 'James 1', bookId: 'JAS', ch: 1 }
+        ]
+      },
+      {
+        id: 'courage',
+        tagId: 'Keteguhan Iman',
+        tagEn: 'Enduring Faith',
+        titleId: 'Perlengkapan & Keteguhan',
+        titleEn: 'Armor & Perseverance',
+        descId: 'Menguatkan langkah di tengah ujian hidup dan panggilan pelayanan.',
+        descEn: 'Strengthening your walk through trials and daily calling.',
+        milestones: [
+          { id: 'c1', labelId: 'Perlengkapan Senjata Allah', labelEn: 'Full Armor of God', refId: 'Surat Efesus 6', refEn: 'Ephesians 6', bookId: 'EPH', ch: 6 },
+          { id: 'c2', labelId: 'Buah Roh & Kemerdekaan', labelEn: 'Fruit of the Spirit', refId: 'Surat Galatia 5', refEn: 'Galatians 5', bookId: 'GAL', ch: 5 },
+          { id: 'c3', labelId: 'Saksi-Saksi Iman', labelEn: 'Cloud of Witnesses', refId: 'Surat Ibrani 11', refEn: 'Hebrews 11', bookId: 'HEB', ch: 11 },
+          { id: 'c4', labelId: 'Kasih yang Melenyapkan Takut', labelEn: 'Love Casts Out Fear', refId: 'Surat 1 Yohanes 4', refEn: '1 John 4', bookId: '1JN', ch: 4 }
+        ]
+      }
+    ];
+
+    // =========================================================================
+    // 7. APPLICATION STATE (CLEAN ZERO-RESET WHEN UNREAD!)
+    // =========================================================================
+    const savedHistory = JSON.parse(localStorage.getItem('bs7_history') || '[]');
+    const savedReadChapters = JSON.parse(localStorage.getItem('bs7_read_chapters') || '[]');
+    const savedMilestones = JSON.parse(localStorage.getItem('bs7_milestones') || '[]');
+
+    // Enforce rule: if user hasn't read anything yet (savedReadChapters is empty), force progress to 0!
+    const hasStartedReading = savedReadChapters.length > 0;
+
+    let state = {
+      route: 'home',
+      uiLang: localStorage.getItem('bs7_uilang') || 'id',
+      theme: localStorage.getItem('bs7_theme') || 'light',
+      translation: localStorage.getItem('bs7_trans') || 'id',
+      currentBook: localStorage.getItem('bs7_book') || 'JHN',
+      currentChapter: parseInt(localStorage.getItem('bs7_chapter') || '1', 10),
+      fontSize: parseInt(localStorage.getItem('bs7_fontsize') || '18', 10),
+      focusMode: false,
+      chapterVerses: [],
+      selectedVerse: null,
+      bookmarks: JSON.parse(localStorage.getItem('bs7_bookmarks') || '[]'),
+      highlights: JSON.parse(localStorage.getItem('bs7_highlights') || '{}'),
+      notes: JSON.parse(localStorage.getItem('bs7_notes') || '[]'),
+      history: hasStartedReading ? savedHistory : [],
+      readChapters: hasStartedReading ? savedReadChapters : [],
+      completedMilestones: hasStartedReading ? savedMilestones : [],
+      spotlightIdx: 0,
+      cardTheme: 'photoMorning',
+      dailyCustomText: null,
+      dailyCustomRef: null,
+      quizIndex: 0,
+      quizScore: 0,
+      quizStreak: 0,
+      quizSelectedOption: null,
+      isSpeaking: false
+    };
+
+    function persist() {
+      localStorage.setItem('bs7_uilang', state.uiLang);
+      localStorage.setItem('bs7_theme', state.theme);
+      localStorage.setItem('bs7_trans', state.translation);
+      localStorage.setItem('bs7_book', state.currentBook);
+      localStorage.setItem('bs7_chapter', String(state.currentChapter));
+      localStorage.setItem('bs7_fontsize', String(state.fontSize));
+      localStorage.setItem('bs7_bookmarks', JSON.stringify(state.bookmarks));
+      localStorage.setItem('bs7_highlights', JSON.stringify(state.highlights));
+      localStorage.setItem('bs7_notes', JSON.stringify(state.notes));
+      localStorage.setItem('bs7_history', JSON.stringify(state.history));
+      localStorage.setItem('bs7_read_chapters', JSON.stringify(state.readChapters));
+      localStorage.setItem('bs7_milestones', JSON.stringify(state.completedMilestones));
+    }
+
+    function getProgressStats() {
+      const totalMilestones = READING_TRACKS.reduce((acc, tr) => acc + tr.milestones.length, 0);
+      const completedCount = state.completedMilestones.length;
+      const chaptersCount = state.readChapters.length;
+      // If user hasn't read any chapter yet, strictly return 0!
+      if (chaptersCount === 0 && completedCount === 0) {
+        return { chaptersCount: 0, completedCount: 0, totalMilestones, pct: 0, isZero: true };
+      }
+      const pct = Math.min(100, Math.round((completedCount / totalMilestones) * 100));
+      return { chaptersCount, completedCount, totalMilestones, pct, isZero: false };
+    }
+
+    function resetAllProgress() {
+      state.history = [];
+      state.readChapters = [];
+      state.completedMilestones = [];
+      persist();
+      renderNav();
+      render();
+      showToast(state.uiLang === 'id' ? 'Progres bacaan di-reset ke 0' : 'Reading progress reset to 0');
+    }
+
+    function markCurrentChapterCompleted() {
+      const key = `${state.currentBook}:${state.currentChapter}`;
+      const bookObj = BOOKS.find(b => b.id === state.currentBook) || BOOKS[0];
+      const label = `${getBookName(bookObj)} ${state.currentChapter}`;
+
+      if (!state.readChapters.includes(key)) {
+        state.readChapters.push(key);
+      }
+      state.history = [label, ...state.history.filter(h => h !== label)].slice(0, 12);
+
+      // Auto-complete any matching milestone in READING_TRACKS
+      READING_TRACKS.forEach(tr => {
+        tr.milestones.forEach(m => {
+          if (m.bookId === state.currentBook && m.ch === state.currentChapter && !state.completedMilestones.includes(m.id)) {
+            state.completedMilestones.push(m.id);
+          }
+        });
+      });
+
+      persist();
+      renderNav();
+      renderVerses(document.getElementById('verse-filter')?.value || '');
+      showToast(state.uiLang === 'id' ? `Selesai dibaca: ${label}` : `Completed: ${label}`);
+    }
+
+    function t() { return I18N[state.uiLang]; }
+
+    function showToast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      clearTimeout(window._toastT);
+      window._toastT = setTimeout(() => el.classList.add('hidden'), 2400);
+    }
+
+    function copyCreatorUsername() {
+      navigator.clipboard.writeText('@doysleepwell');
+      showToast('Handle @doysleepwell disalin!');
+    }
+
+    // =========================================================================
+    // 8. THEME, LANGUAGE, ADAPTIVE TOP + BOTTOM NAVIGATION & MORE DRAWER
+    // =========================================================================
+    function applyTheme() {
+      const html = document.documentElement;
+      const icon = document.getElementById('theme-icon');
+      if (state.theme === 'dark') {
+        html.classList.add('dark');
+        if (icon) icon.innerHTML = ICONS.sun;
+      } else {
+        html.classList.remove('dark');
+        if (icon) icon.innerHTML = ICONS.moon;
+      }
+    }
+
+    function toggleTheme() {
+      state.theme = state.theme === 'light' ? 'dark' : 'light';
+      persist();
+      applyTheme();
+      if (state.route === 'daily') drawDailyCanvas();
+    }
+
+    function toggleUILang() {
+      state.uiLang = state.uiLang === 'id' ? 'en' : 'id';
+      if (state.uiLang === 'id') state.translation = 'id';
+      else if (state.translation === 'id') state.translation = 'web';
+      persist();
+      renderNav();
+      render();
+      showToast(state.uiLang === 'id' ? 'Bahasa Indonesia (TB) aktif' : 'Switched to English');
+    }
+
+    function renderNav() {
+      const langBtn = document.getElementById('ui-lang-btn');
+      if (langBtn) langBtn.textContent = state.uiLang === 'id' ? 'ID' : 'EN';
+      const qsLabel = document.getElementById('quick-search-label');
+      if (qsLabel) qsLabel.textContent = state.uiLang === 'id' ? 'Cari kitab...' : 'Jump to book...';
+
+      const stats = getProgressStats();
+      const headerProg = document.getElementById('header-progress-text');
+      if (headerProg) {
+        headerProg.textContent = state.uiLang === 'id'
+          ? `${stats.chaptersCount} Pasal`
+          : `${stats.chaptersCount} Ch`;
+      }
+
+      const secondaryRoutes = t().moreMenu.map(m => m.id);
+      const isSecondaryActive = secondaryRoutes.includes(state.route);
+
+      // Desktop Center Pill Nav
+      const desktopDock = document.getElementById('desktop-nav-items');
+      if (desktopDock) {
+        desktopDock.innerHTML = t().desktopNav.map(it => {
+          const active = it.isDrawer
+            ? ['daily', 'characters', 'explorer', 'library', 'creator', 'settings'].includes(state.route)
+            : state.route === it.id;
+          const action = it.isDrawer ? 'openMoreMenu()' : `navigate('${it.id}')`;
+          return `
+            <button onclick="${action}" class="px-3.5 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-semibold transition-all ${active ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 shadow-xs' : 'text-ink-mutedLight dark:text-ink-mutedDark hover:text-ink-light dark:hover:text-ink-dark'}">
+              ${ICONS[it.icon]}
+              <span>${it.label}</span>
+            </button>
+          `;
+        }).join('');
+      }
+
+      // Mobile Bottom Floating Dock
+      const dock = document.getElementById('bottom-nav-items');
+      if (dock) {
+        dock.innerHTML = t().primaryNav.map(it => {
+          const active = it.isDrawer ? isSecondaryActive : state.route === it.id;
+          const action = it.isDrawer ? 'openMoreMenu()' : `navigate('${it.id}')`;
+          return `
+            <button onclick="${action}" class="flex-1 py-2 px-1.5 min-h-[44px] rounded-full flex flex-col items-center justify-center gap-1 text-[10px] font-semibold transition-all ${active ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 shadow-xs' : 'text-ink-mutedLight dark:text-ink-mutedDark hover:text-ink-light dark:hover:text-ink-dark'}">
+              ${ICONS[it.icon]}
+              <span class="leading-none">${it.label}</span>
+            </button>
+          `;
+        }).join('');
+      }
+    }
+
+    function openMoreMenu() {
+      const drawer = document.getElementById('more-menu-drawer');
+      const grid = document.getElementById('more-menu-grid');
+      if (!drawer || !grid) return;
+
+      grid.innerHTML = t().moreMenu.map(m => {
+        const active = state.route === m.id;
+        return `
+          <button onclick="closeMoreMenu(); navigate('${m.id}')" class="p-3.5 rounded-2xl border text-left transition-all flex flex-col justify-between gap-2.5 ${active ? 'bg-amber-500/10 border-brand' : 'bg-surface-subtleLight/70 dark:bg-surface-subtleDark/70 border-transparent hover:border-stone-300 dark:hover:border-stone-700'}">
+            <div class="w-8 h-8 rounded-xl flex items-center justify-center ${active ? 'bg-brand text-white' : 'bg-surface-light dark:bg-surface-dark text-brand'}">
+              ${ICONS[m.icon]}
+            </div>
+            <div>
+              <span class="font-display font-bold text-xs block">${m.label}</span>
+              <span class="text-[10px] text-ink-mutedLight dark:text-ink-mutedDark leading-tight block mt-0.5">${m.desc}</span>
+            </div>
+          </button>
+        `;
+      }).join('');
+
+      drawer.classList.remove('hidden');
+    }
+
+    function closeMoreMenu() {
+      const drawer = document.getElementById('more-menu-drawer');
+      if (drawer) drawer.classList.add('hidden');
+    }
+
+    function navigate(route) {
+      stopSpeech();
+      closeVerseSheet();
+      closeMoreMenu();
+      if (state.focusMode && route !== 'read') toggleFocusMode();
+      state.route = route;
+      renderNav();
+
+      const bar = document.getElementById('reader-floating-bar');
+      if (bar) {
+        if (route === 'read') bar.classList.remove('hidden');
+        else bar.classList.add('hidden');
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      render();
+    }
+
+    function toggleFocusMode() {
+      state.focusMode = !state.focusMode;
+      const header = document.getElementById('app-header');
+      const footer = document.getElementById('app-footer');
+      const dock = document.getElementById('bottom-dock');
+      const btn = document.getElementById('focus-btn');
+      if (state.focusMode) {
+        header.classList.add('hidden');
+        footer.classList.add('hidden');
+        dock.classList.add('hidden');
+        if (btn) btn.textContent = 'Keluar';
+        showToast('Mode Fokus Aktif');
+      } else {
+        header.classList.remove('hidden');
+        footer.classList.remove('hidden');
+        dock.classList.remove('hidden');
+        if (btn) btn.textContent = 'Fokus';
+      }
+    }
+
+    function adjustFontSize(delta) {
+      state.fontSize = Math.min(26, Math.max(15, state.fontSize + delta));
+      persist();
+      const el = document.getElementById('verses-list');
+      if (el) el.style.fontSize = `${state.fontSize}px`;
+    }
+
+    function openQuickSearch() {
+      document.getElementById('search-modal').classList.remove('hidden');
+      const inp = document.getElementById('global-search-input');
+      inp.value = '';
+      inp.focus();
+      handleQuickSearch('');
+    }
+    function closeQuickSearch() {
+      document.getElementById('search-modal').classList.add('hidden');
+    }
+    function handleQuickSearch(q) {
+      const box = document.getElementById('quick-search-results');
+      const term = q.trim().toLowerCase();
+      const matches = BOOKS.filter(b =>
+        b.nameId.toLowerCase().includes(term) || b.nameEn.toLowerCase().includes(term)
+      );
+      box.innerHTML = matches.map(b => `
+        <button onclick="jumpToBook('${b.id}')" class="w-full p-3 rounded-2xl hover:bg-surface-subtleLight dark:hover:bg-surface-subtleDark flex items-center justify-between text-left transition-colors">
+          <div>
+            <span class="font-display font-semibold text-sm block">${state.uiLang === 'id' ? b.nameId : b.nameEn}</span>
+            <span class="text-[11px] text-ink-mutedLight dark:text-ink-mutedDark line-clamp-1">${state.uiLang === 'id' ? b.summaryId : b.summaryEn}</span>
+          </div>
+          <span class="text-xs text-brand font-semibold shrink-0 ml-3">${b.chapters} Pasal →</span>
+        </button>
+      `).join('');
+    }
+    function jumpToBook(bookId, chapter = 1) {
+      state.currentBook = bookId;
+      state.currentChapter = chapter;
+      persist();
+      closeQuickSearch();
+      navigate('read');
+    }
+    document.addEventListener('keydown', e => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        openQuickSearch();
+      } else if (e.key === 'Escape') {
+        closeQuickSearch();
+        closeVerseSheet();
+        closeNoteModal();
+        closeMoreMenu();
+      }
+    });
+
+    function getBookName(b) {
+      return state.uiLang === 'id' ? b.nameId : b.nameEn;
+    }
+
+    // =========================================================================
+    // 9. INDONESIAN BIBLE (TB) MULTI-SOURCE FETCHER + OFFLINE BANK
+    // =========================================================================
+    async function fetchIndonesianFromAPIs(bookObj, chapter) {
+      try {
+        const res = await fetch(`https://bolls.life/get-text/TB/${bookObj.num}/${chapter}/`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            return data.map(v => ({
+              book_name: bookObj.nameId,
+              chapter: Number(chapter),
+              verse: Number(v.verse),
+              text: String(v.text || '').replace(/<[^>]*>/g, '').trim()
+            }));
+          }
+        }
+      } catch (e) {}
+
+      try {
+        const res2 = await fetch(`https://beeble.vercel.app/api/v1/passage/${encodeURIComponent(bookObj.apiId)}/${chapter}`);
+        if (res2.ok) {
+          const json2 = await res2.json();
+          const verses = json2?.data?.verses || [];
+          if (verses.length > 0) {
+            return verses.map(v => ({
+              book_name: bookObj.nameId,
+              chapter: Number(chapter),
+              verse: Number(v.verse),
+              text: String(v.content || v.text || '').trim()
+            }));
+          }
+        }
+      } catch (e) {}
+
+      return null;
+    }
+
+    async function fetchChapter(bookId, chapter) {
+      const bookObj = BOOKS.find(b => b.id === bookId) || BOOKS[0];
+      const label = getBookName(bookObj);
+      const container = document.getElementById('verses-list');
+      if (container) {
+        container.innerHTML = `
+          <div class="space-y-3 py-8 animate-pulse">
+            <div class="h-4 bg-surface-subtleLight dark:bg-surface-subtleDark rounded-full w-3/4"></div>
+            <div class="h-4 bg-surface-subtleLight dark:bg-surface-subtleDark rounded-full w-full"></div>
+            <div class="h-4 bg-surface-subtleLight dark:bg-surface-subtleDark rounded-full w-5/6"></div>
+          </div>`;
+      }
+
+      const key = `${bookId}:${chapter}`;
+
+      if (state.translation === 'id') {
+        const liveIndo = await fetchIndonesianFromAPIs(bookObj, chapter);
+        if (liveIndo && liveIndo.length > 0) {
+          state.chapterVerses = liveIndo;
+          recordHistory(`${bookObj.nameId} ${chapter}`, key);
+          renderVerses();
+          return;
+        }
+        if (ID_SCRIPTURE_BANK[key]) {
+          state.chapterVerses = ID_SCRIPTURE_BANK[key].map(v => ({
+            book_name: bookObj.nameId,
+            chapter,
+            verse: v.verse,
+            text: v.text
+          }));
+          recordHistory(`${bookObj.nameId} ${chapter}`, key);
+          renderVerses();
+          return;
+        }
+        if (container) {
+          container.innerHTML = `
+            <div class="p-6 rounded-2xl bg-surface-subtleLight dark:bg-surface-subtleDark text-center space-y-2">
+              <p class="text-sm font-semibold">Teks Alkitab Indonesia (${bookObj.nameId} ${chapter}) belum termuat offline.</p>
+              <p class="text-xs text-ink-mutedLight dark:text-ink-mutedDark">Pastikan koneksi internet aktif untuk mengambil seluruh pasal TB, atau buka pasal pilihan seperti Yohanes 1, Surat Roma 8, Surat Filipi 4, Surat 1 Korintus 13, Surat Yakobus 1, dan Mazmur 23.</p>
+            </div>`;
+        }
+        return;
+      }
+
+      try {
+        const res = await fetch(`https://bible-api.com/${encodeURIComponent(bookObj.nameEn + ' ' + chapter)}?translation=${state.translation}`);
+        if (!res.ok) throw new Error('API Error');
+        const data = await res.json();
+        state.chapterVerses = (data.verses || []).map(v => ({
+          book_name: v.book_name,
+          chapter: v.chapter,
+          verse: v.verse,
+          text: v.text
+        }));
+        recordHistory(`${label} ${chapter}`, key);
+        renderVerses();
+      } catch (err) {
+        if (container) {
+          container.innerHTML = `<div class="p-6 rounded-2xl bg-surface-subtleLight dark:bg-surface-subtleDark text-center text-xs">Gagal memuat teks. Periksa koneksi internet kamu.</div>`;
+        }
+      }
+    }
+
+    function recordHistory(entry, key) {
+      state.history = [entry, ...state.history.filter(h => h !== entry)].slice(0, 12);
+      if (key && !state.readChapters.includes(key)) {
+        state.readChapters.push(key);
+      }
+      persist();
+      renderNav();
+    }
+
+    function speakCurrentChapter() {
+      if (!('speechSynthesis' in window)) {
+        showToast('Browser tidak mendukung fitur suara');
+        return;
+      }
+      if (state.isSpeaking) {
+        stopSpeech();
+        return;
+      }
+      if (!state.chapterVerses.length) return;
+      const fullText = state.chapterVerses.map(v => v.text).join(' ');
+      const utter = new SpeechSynthesisUtterance(fullText);
+      utter.lang = state.translation === 'id' ? 'id-ID' : 'en-US';
+      utter.rate = 0.96;
+      utter.onend = () => {
+        state.isSpeaking = false;
+        const lbl = document.getElementById('tts-label');
+        if (lbl) lbl.textContent = 'Dengar';
+      };
+      state.isSpeaking = true;
+      const lbl = document.getElementById('tts-label');
+      if (lbl) lbl.textContent = 'Stop';
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utter);
+    }
+
+    function stopSpeech() {
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      state.isSpeaking = false;
+      const lbl = document.getElementById('tts-label');
+      if (lbl) lbl.textContent = 'Dengar';
+    }
+
+    // =========================================================================
+    // 10. INTERACTIVE TAP-TO-SELECT VERSE ACTION SHEET
+    // =========================================================================
+    function selectVerseForAction(ref, text) {
+      state.selectedVerse = { ref, text };
+      document.getElementById('sheet-verse-ref').textContent = ref;
+      document.getElementById('sheet-verse-snippet').textContent = text;
+      const isBm = state.bookmarks.some(b => b.ref === ref);
+      document.getElementById('sheet-bm-btn').textContent = isBm ? 'Tersimpan' : 'Simpan';
+      document.getElementById('verse-action-sheet').classList.remove('hidden');
+      renderVerses(document.getElementById('verse-filter')?.value || '');
+    }
+
+    function closeVerseSheet() {
+      state.selectedVerse = null;
+      const sheet = document.getElementById('verse-action-sheet');
+      if (sheet) sheet.classList.add('hidden');
+      if (state.route === 'read') renderVerses(document.getElementById('verse-filter')?.value || '');
+    }
+
+    function applySheetHighlight(color) {
+      if (!state.selectedVerse) return;
+      const { ref } = state.selectedVerse;
+      if (!color) delete state.highlights[ref];
+      else state.highlights[ref] = color;
+      persist();
+      renderVerses(document.getElementById('verse-filter')?.value || '');
+      showToast(color ? `Ditandai (${ref})` : 'Stabilo dihapus');
+    }
+
+    function bookmarkFromSheet() {
+      if (!state.selectedVerse) return;
+      const { ref, text } = state.selectedVerse;
+      const idx = state.bookmarks.findIndex(b => b.ref === ref);
+      if (idx >= 0) {
+        state.bookmarks.splice(idx, 1);
+        document.getElementById('sheet-bm-btn').textContent = 'Simpan';
+        showToast('Dihapus dari tersimpan');
+      } else {
+        state.bookmarks.unshift({ ref, text, translation: state.translation.toUpperCase(), date: new Date().toLocaleDateString() });
+        document.getElementById('sheet-bm-btn').textContent = 'Tersimpan';
+        showToast(`Disimpan: ${ref}`);
+      }
+      persist();
+    }
+
+    function noteFromSheet() {
+      if (!state.selectedVerse) return;
+      openNoteModal(state.selectedVerse.ref, state.selectedVerse.text);
+    }
+
+    function shareCardFromSheet() {
+      if (!state.selectedVerse) return;
+      state.dailyCustomText = state.selectedVerse.text;
+      state.dailyCustomRef = state.selectedVerse.ref;
+      closeVerseSheet();
+      navigate('daily');
+    }
+
+    // =========================================================================
+    // 11. SPOTLIGHT SWITCHER
+    // =========================================================================
+    function setSpotlight(idx) {
+      state.spotlightIdx = (idx + SPOTLIGHTS.length) % SPOTLIGHTS.length;
+      const box = document.getElementById('spotlight-stage');
+      if (box) box.innerHTML = buildSpotlightStage();
+    }
+
+    function saveSpotlightVerse() {
+      const sp = SPOTLIGHTS[state.spotlightIdx];
+      const ref = state.uiLang === 'id' ? sp.refId : sp.refEn;
+      const text = state.uiLang === 'id' ? sp.verseId : sp.verseEn;
+      if (!state.bookmarks.some(b => b.ref === ref)) {
+        state.bookmarks.unshift({ ref, text, translation: state.uiLang.toUpperCase(), date: new Date().toLocaleDateString() });
+        persist();
+      }
+      showToast(`Tersimpan: ${ref}`);
+    }
+
+    function createCardFromSpotlight() {
+      const sp = SPOTLIGHTS[state.spotlightIdx];
+      state.dailyCustomText = state.uiLang === 'id' ? sp.verseId : sp.verseEn;
+      state.dailyCustomRef = state.uiLang === 'id' ? sp.refId : sp.refEn;
+      navigate('daily');
+    }
+
+    function buildSpotlightStage() {
+      const sp = SPOTLIGHTS[state.spotlightIdx];
+      const isId = state.uiLang === 'id';
+      const verse = isId ? sp.verseId : sp.verseEn;
+      const ref = isId ? sp.refId : sp.refEn;
+      const meaning = isId ? sp.meaningId : sp.meaningEn;
+      const tafsir = isId ? sp.tafsirId : sp.tafsirEn;
+      const reflection = isId ? sp.reflectionId : sp.reflectionEn;
+
+      return `
+        <div class="fade-up space-y-5">
+          <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+            ${SPOTLIGHTS.map((item, i) => `
+              <button onclick="setSpotlight(${i})" class="px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${i === state.spotlightIdx ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900' : 'bg-surface-subtleLight dark:bg-surface-subtleDark text-ink-mutedLight dark:text-ink-mutedDark hover:text-ink-light dark:hover:text-ink-dark'}">
+                ${isId ? item.moodId : item.moodEn}
+              </button>
+            `).join('')}
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            <div class="lg:col-span-6 rounded-3xl overflow-hidden relative min-h-[320px] sm:min-h-[340px] flex flex-col justify-between p-6 sm:p-9 text-white photo-card border border-stone-200 dark:border-stone-800">
+              <img src="${sp.photo}" alt="${ref}" class="absolute inset-0 w-full h-full object-cover" />
+              <div class="absolute inset-0 bg-gradient-to-t from-stone-950/90 via-stone-950/55 to-stone-950/35"></div>
+
+              <div class="space-y-5 relative z-10">
+                <div class="flex items-center justify-between">
+                  <span class="px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/15 text-amber-200 text-[11px] font-semibold tracking-wide">${ref}</span>
+                  <div class="flex gap-1.5">
+                    <button onclick="setSpotlight(${state.spotlightIdx - 1})" class="w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md flex items-center justify-center text-xs">←</button>
+                    <button onclick="setSpotlight(${state.spotlightIdx + 1})" class="w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md flex items-center justify-center text-xs">→</button>
+                  </div>
+                </div>
+                <p class="font-serif text-2xl sm:text-4xl leading-snug text-white">
+                  “${verse}”
+                </p>
+              </div>
+
+              <div class="pt-6 mt-6 border-t border-white/15 flex flex-wrap items-center gap-2.5 relative z-10">
+                <button onclick="jumpToBook('${sp.bookId}', ${sp.chapter})" class="px-4 py-2 rounded-full bg-white text-stone-900 hover:bg-stone-100 text-xs font-bold transition-colors">
+                  ${t().openChapter} →
+                </button>
+                <button onclick="saveSpotlightVerse()" class="px-4 py-2 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-md border border-white/15 text-xs font-medium transition-colors">
+                  ${t().saveVerse}
+                </button>
+                <button onclick="createCardFromSpotlight()" class="px-4 py-2 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-md border border-white/15 text-xs font-medium transition-colors">
+                  Kartu Foto
+                </button>
+              </div>
+            </div>
+
+            <div class="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="p-5 rounded-3xl bg-surface-light dark:bg-surface-dark border border-stone-200/80 dark:border-stone-800 space-y-2">
+                <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-brand">
+                  ${ICONS.lexicon} ${t().meaningTitle}
+                </span>
+                <p class="text-xs text-ink-mutedLight dark:text-ink-mutedDark leading-relaxed">${meaning}</p>
+              </div>
+
+              <div class="p-5 rounded-3xl bg-surface-light dark:bg-surface-dark border border-stone-200/80 dark:border-stone-800 space-y-2">
+                <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-accent">
+                  ${ICONS.context} ${t().tafsirTitle}
+                </span>
+                <p class="text-xs text-ink-mutedLight dark:text-ink-mutedDark leading-relaxed">${tafsir}</p>
+              </div>
+
+              <div class="sm:col-span-2 p-5 rounded-3xl bg-surface-subtleLight dark:bg-surface-subtleDark border border-stone-200/80 dark:border-stone-800 space-y-1.5">
+                <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-brand">
+                  ${ICONS.spark} ${t().reflectionTitle}
+                </span>
+                <p class="text-sm font-medium leading-relaxed">${reflection}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // =========================================================================
+    // 12. SVG RING HELPER & VIEW RENDERERS
+    // =========================================================================
+    function buildRadialRing(pct, size = 68, stroke = 6, label = '') {
+      const r = (size - stroke) / 2;
+      const circ = 2 * Math.PI * r;
+      const offset = circ - (pct / 100) * circ;
+      return `
+        <div class="relative inline-flex items-center justify-center shrink-0" style="width:${size}px;height:${size}px">
+          <svg class="-rotate-90" width="${size}" height="${size}">
+            <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="transparent" stroke="currentColor" stroke-width="${stroke}" class="text-stone-200 dark:text-stone-800" />
+            <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="transparent" stroke="currentColor" stroke-width="${stroke}" stroke-dasharray="${circ}" stroke-dashoffset="${offset}" stroke-linecap="round" class="text-brand transition-all duration-500" />
+          </svg>
+          <span class="absolute font-display font-bold text-xs">${label || pct + '%'}</span>
+        </div>
+      `;
+    }
+
+    // --- HOME ---
+    function viewHome() {
+      const isId = state.uiLang === 'id';
+      const stats = getProgressStats();
+      const lastRead = state.history[0] || (isId ? 'Belum ada pasal dibaca (0)' : 'No chapters read yet (0)');
+
+      return `
+        <div class="fade-up space-y-10 sm:space-y-12">
+          <!-- Editorial Split Hero Banner -->
+          <div class="rounded-3xl overflow-hidden bg-surface-light dark:bg-surface-dark border border-stone-200/80 dark:border-stone-800 grid grid-cols-1 lg:grid-cols-12">
+            <div class="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-between space-y-6">
+              <div class="space-y-4">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-subtleLight dark:bg-surface-subtleDark text-brand text-xs font-semibold max-w-full">
+                  <span class="w-1.5 h-1.5 rounded-full bg-brand shrink-0"></span>
+                  <span class="truncate">${t().greeting} • ${lastRead}</span>
+                </div>
+                <h1 class="font-display font-bold text-3xl sm:text-5xl tracking-tight leading-[1.12]">
+                  ${t().heroHeadline}
+                </h1>
+                <p class="text-sm text-ink-mutedLight dark:text-ink-mutedDark leading-relaxed max-w-xl">
+                  ${t().heroSub}
+                </p>
+              </div>
+
+              <div class="flex flex-wrap gap-3">
+                <button onclick="navigate('read')" class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 hover:opacity-90 text-xs font-bold transition-opacity">
+                  ${ICONS.read} <span>${t().ctaRead}</span>
+                </button>
+                <button onclick="navigate('plans')" class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-surface-subtleLight dark:bg-surface-subtleDark hover:bg-stone-200 dark:hover:bg-stone-800 text-xs font-semibold transition-colors">
+                  ${ICONS.plans} <span>${isId ? 'Lihat Progres' : 'View Progress'} (${stats.pct}%)</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Right Editorial Photo Frame -->
+            <div class="lg:col-span-5 relative min-h-[240px] lg:min-h-full photo-card overflow-hidden">
+              <img src="${PHOTOS.heroScripture}" alt="Open Scripture in Morning Light" class="absolute inset-0 w-full h-full object-cover" />
+              <div class="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent"></div>
+              <div class="absolute bottom-5 left-5 right-5 text-white">
+                <span class="text-[10px] uppercase tracking-widest text-amber-200 font-bold block">Alkitab Terjemahan Baru</span>
+                <p class="font-serif italic text-xl mt-0.5">“Firman-Mu itu pelita bagi kakiku dan terang bagi jalanku.”</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- New Non-Calendar Editorial Progress & Momentum Strip -->
+          <section class="rounded-3xl bg-surface-light dark:bg-surface-dark border border-stone-200/80 dark:border-stone-800 p-5 sm:p-7">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div class="flex items-center gap-4 sm:gap-5">
+                ${buildRadialRing(stats.pct, 72, 6, `${stats.pct}%`)}
+                <div class="space-y-1">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-brand">
+                      ${isId ? 'Jejak Bacaan Kamu' : 'Your Reading Journey'}
+                    </span>
+                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${stats.isZero ? 'bg-stone-200/80 dark:bg-stone-800 text-ink-mutedLight dark:text-ink-mutedDark' : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'}">
+                      ${stats.isZero ? (isId ? 'Reset • 0 Aktivitas' : 'Reset • 0 Activity') : (isId ? 'Aktif Membaca' : 'Active Reader')}
+                    </span>
+                  </div>
+                  <h2 class="font-display font-bold text-lg sm:text-xl">
+                    ${stats.isZero
+                      ? (isId ? 'Belum ada pasal yang dibaca (0)' : 'No chapters read yet (0)')
+                      : (isId ? `${stats.chaptersCount} Pasal Dibaca • ${stats.completedCount}/${stats.totalMilestones} Tahap` : `${stats.chaptersCount} Chapters Read • ${stats.completedCount}/${stats.totalMilestones} Milestones`)}
+                  </h2>
+                  <p class="text-xs text-ink-mutedLight dark:text-ink-mutedDark">
+                    ${stats.isZero
+                      ? (isId ? 'Buka salah satu kitab untuk mulai mencatat progres bacaanmu secara otomatis.' : 'Open any book to automatically begin tracking your reading journey.')
+                      : (isId ? `Terakhir dibuka: ${state.history[0]}` : `Last opened: ${state.history[0]}`)}
+                  </p>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+                <div class="px-4 py-2.5 rounded-2xl bg-surface-subtleLight dark:bg-surface-subtleDark text-center min-w-[84px]">
+                  <span class="font-display font-bold text-base block">${stats.chaptersCount}</span>
+                  <span class="text-[10px] text-ink-mutedLight dark:text-ink-mutedDark uppercase tracking-wider">Pasal</span>
+                </div>
+                <div class="px-4 py-2.5 rounded-2xl bg-surface-subtleLight dark:bg-surface-subtleDark text-center min-w-[84px]">
+                  <span class="font-display font-bold text-base block">${state.bookmarks.length}</span>
+                  <span class="text-[10px] text-ink-mutedLight dark:text-ink-mutedDark uppercase tracking-wider">Ayat</span>
+                </div>
+                <button onclick="navigate('plans')" class="px-4 py-3 rounded-2xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-xs font-bold hover:opacity-90 transition-opacity">
+                  ${isId ? 'Detail Jalur →' : 'Tracks →'}
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Rotating Spotlight & Exegesis Section -->
+          <section class="space-y-4">
+            <div>
+              <h2 class="font-display font-bold text-2xl tracking-tight">${t().spotlightTitle}</h2>
+              <p class="text-xs text-ink-mutedLight dark:text-ink-mutedDark mt-0.5">${t().spotlightSub}</p>
+            </div>
+            <div id="spotlight-stage">
+              ${buildSpotlightStage()}
+            </div>
+          </section>
+
+          <!-- Visual Feature Cards -->
+          <section class="space-y-4">
+            <h2 class="font-display font-bold text-xl tracking-tight">${isId ? 'Jelajahi Ruang Studi' : 'Explore Study Rooms'}</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              ${[
+                { photo: PHOTOS.ancientScroll, tag: 'TB Indonesia', titleId: 'Baca Injil & Surat', titleEn: 'Read Gospels & Epistles', descId: 'Lengkap dari Kejadian, Mazmur, Injil hingga Surat-surat Rasul dalam Bahasa Indonesia.', descEn: 'Read Genesis, Psalms, Gospels and Epistles smoothly.', nav: 'read' },
+                { photo: PHOTOS.jerusalemArch, tag: 'Leksikon', titleId: 'Tafsir & Paralel', titleEn: 'Exegesis & Parallel', descId: 'Bandingkan terjemahan berdampingan + kamus istilah Ibrani & Yunani.', descEn: 'Compare translations side-by-side + Hebrew/Greek lexicon.', nav: 'study' },
+                { photo: PHOTOS.desertStone, tag: 'Kronologi', titleId: 'Linimasa & Tokoh', titleEn: 'Timeline & People', descId: 'Telusuri jejak sejarah Abraham, Musa, Daud hingga perjalanan Paulus.', descEn: 'Trace historical journeys from Abraham to Paul.', nav: 'explorer' },
+                { photo: PHOTOS.mountainDawn, tag: 'Milestones', titleId: 'Jalur Progres & Kuis', titleEn: 'Progress Tracks & Quiz', descId: 'Pantau pencapaian bacaan bertahap tanpa tekanan kalender & uji wawasan.', descEn: 'Track milestone reading progress without calendar pressure.', nav: 'plans' }
+              ].map(c => `
+                <button onclick="navigate('${c.nav}')" class="rounded-3xl overflow-hidden bg-surface-light dark:bg-surface-dark border border-stone-200/80 dark:border-stone-800 hover:border-brand text-left transition-all group photo-card flex flex-col">
+                  <div class="h-36 w-full relative overflow-hidden">
+                    <img src="${c.photo}" alt="${c.titleId}" class="w-full h-full object-cover" />
+                    <span class="absolute top-3 left-3 px-2.5 py-0.5 rounded-full bg-black/55 backdrop-blur-md text-white text-[10px] font-semibold">${c.tag}</span>
+                  </div>
+                  <div class="p-5 space-y-1.5 flex-1">
+                    <h3 class="font-display font-bold text-base group-hover:text-brand transition-colors">${isId ? c.titleId : c.titleEn}</h3>
+                    <p class="text-xs text-ink-mutedLight dark:text-ink-mutedDark leading-relaxed">${isId ? c.descId : c.descEn}</p>
+                  </div>
+                </button>
+              `).join('')}
+            </div>
+          </section>
+        </div>
+      `;
+    }
+
+    // --- READER VIEW ---
+    function viewReader() {
+      const bookObj = BOOKS.find(b => b.id === state.currentBook) || BOOKS[0];
+      const chapters = Array.from({ length: bookObj.chapters }, (_, i) => i + 1);
+      const isId = state.uiLang === 'id';
+      const chapterKey = `${bookObj.id}:${state.currentChapter}`;
+      const isRead = state.readChapters.includes(chapterKey);
+
+      return `
+        <div class="fade-up max-w-3xl mx-auto space-y-6 pb-24">
+          <!-- Top Pill Selector Bar -->
+          <div class="flex flex-wrap items-center justify-between gap-2.5 p-2.5 rounded-3xl bg-surface-light dark:bg-surface-dark border border-stone-200/80 dark:border-stone-800">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <select onchange="changeBook(this.value)" class="px-3.5 py-2 rounded-full bg-surface-subtleLight dark:bg-surface-subtleDark text-xs font-bold focus:outline-none">
+                ${BOOKS.map(b => `<option value="${b.id}" ${b.id === bookObj.id ? 'selected' : ''}>${getBookName(b)}</option>`).join('')}
+              </select>
+
+              <select onchange="changeChapter(this.value)" class="px-3.5 py-2 rounded-full bg-surface-subtleLight dark:bg-surface-subtleDark text-xs font-semibold focus:outline-none">
+                ${chapters.map(c => `<option value="${c}" ${c === state.currentChapter ? 'selected' : ''}>${isId ? 'Pasal' : 'Ch'} ${c}</option>`).join('')}
+              </select>
+
+              <select onchange="changeTranslation(this.value)" class="px-3.5 py-2 rounded-full bg-amber-500/15 text-brand text-xs font-bold focus:outline-none">
+                ${TRANSLATIONS.map(tr => `<option value="${tr.code}" ${tr.code === state.translation ? 'selected' : ''}>${tr.name}</option>`).join('')}
+              </select>
+            </div>
+
+            <input id="verse-filter" oninput="renderVerses(this.value)" type="text" placeholder="${isId ? 'Filter ayat...' : 'Filter verses...'}" class="w-full sm:w-44 px-3.5 py-2 rounded-full bg-surface-subtleLight dark:bg-surface-subtleDark text-xs focus:outline-none" />
+          </div>
+
+          <!-- Chapter Title Card -->
+          <div class="px-2 pt-1 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div class="space-y-1.5">
+              <span class="text-xs font-bold uppercase tracking-wider text-brand">${bookObj.testament === 'OT' ? (isId ? 'Perjanjian Lama' : 'Old Testament') : (isId ? 'Perjanjian Baru' : 'New Testament')}</span>
+              <h1 class="font-display font-bold text-3xl sm:text-4xl tracking-tight">${getBookName(bookObj)} ${state.currentChapter}</h1>
+              <p class="text-xs text-ink-mutedLight dark:text-ink-mutedDark">${isId ? bookObj.summaryId : bookObj.summaryEn}</p>
+            </div>
+
+            <button onclick="markCurrentChapterCompleted()" class="self-start sm:self-end inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-colors shrink-0 ${isRead ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400' : 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900'}">
+              ${ICONS.check}
+              <span>${isRead ? (isId ? 'Pasal Tercatat' : 'Chapter Logged') : (isId ? 'Tandai Selesai' : 'Mark Complete')}</span>
+            </button>
+          </div>
+
+          <!-- Clean Verses Container -->
+          <div id="verses-list" style="font-size:${state.fontSize}px" class="rounded-3xl bg-surface-light dark:bg-surface-dark border border-stone-200/80 dark:border-stone-800 p-5 sm:p-8 space-y-2 leading-[1.85]"></div>
+        </div>
+      `;
+    }
+
+    function renderVerses(filter = '') {
+      const box = document.getElementById('verses-list');
+      if (!box) return;
+      const q = filter.trim().toLowerCase();
+      const list = q ? state.chapterVerses.filter(v => v.text.toLowerCase().includes(q) || String(v.verse) === q) : state.chapterVerses;
+
+      if (!list.length) {
+        box.innerHTML = `<p class="text-center py-8 text-xs text-ink-mutedLight dark:text-ink-mutedDark">Ayat tidak ditemukan.</p>`;
+        return;
+      }
+
+      const hlMap = {
+        amber: 'bg-amber-200/75 dark:bg-amber-400/25 px-1.5 py-0.5 rounded-lg',
+        terracotta: 'bg-orange-200/75 dark:bg-orange-400/25 px-1.5 py-0.5 rounded-lg',
+        stone: 'bg-stone-200/85 dark:bg-stone-600/40 px-1.5 py-0.5 rounded-lg',
+        rose: 'bg-rose-200/75 dark:bg-rose-400/25 px-1.5 py-0.5 rounded-lg'
+      };
+
+      box.innerHTML = list.map(v => {
+        const ref = `${v.book_name} ${v.chapter}:${v.verse}`;
+        const hl = state.highlights[ref];
+        const isSelected = state.selectedVerse && state.selectedVerse.ref === ref;
+        const isBm = state.bookmarks.some(b => b.ref === ref);
+        const hasNote = state.notes.some(n => n.ref === ref);
+
+        return `
+          <div onclick="selectVerseForAction('${ref.replace(/'/g, "\\'")}', \`${v.text.trim().replace(/`/g, '')}\`)" class="verse-tap cursor-pointer p-2.5 rounded-2xl transition-colors ${isSelected ? 'bg-amber-500/10 ring-1 ring-brand' : 'hover:bg-surface-subtleLight/70 dark:hover:bg-surface-subtleDark/60'}">
+            <sup class="font-display font-bold text-[11px] text-brand mr-1.5 select-none">${v.verse}</sup>
+            <span class="${hl ? hlMap[hl] : ''}">${v.text.trim()}</span>
+            ${isBm ? '<span class="ml-1.5 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/15 text-brand">Saved</span>' : ''}
+            ${hasNote ? '<span class="ml-1 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-stone-200 dark:bg-stone-700">Note</span>' : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function changeBook(id) { state.currentBook = id; state.currentChapter = 1; persist(); render(); }
+    function changeChapter(ch) { state.currentChapter = parseInt(ch, 10); persist(); render(); }
+    function changeTranslation(code) { state.translation = code; persist(); fetchChapter(state.currentBook, state.currentChapter); }
+    function stepChapter(delta) {
+      const idx = BOOKS.findIndex(b => b.id === state.currentBook);
+      const b = BOOKS[idx];
+      let next = state.currentChapter + delta;
+      if (next >= 1 && next <= b.chapters) state.currentChapter = next;
+      else if (delta > 0 && idx < BOOKS.length - 1) { state.currentBook = BOOKS[idx + 1].id; state.currentChapter = 1; }
+      else if (delta < 0 && idx > 0) { state.currentBook = BOOKS[idx - 1].id; state.currentChapter = BOOKS[idx - 1].chapters; }
+      persist();
+      render();
+    }
+
+    function openNoteModal(ref, text) {
+      state.activeNoteTarget = { ref, text };
+      const existing = state.notes.find(n => n.ref === ref);
+      document.getElementById('note-verse-ref').textContent = ref;
+      document.getElementById('note-verse-preview').textContent = text;
+      document.getElementById('note-input').value = existing ? existing.content : '';
+      document.getElementById('note-modal').classList.remove('hidden');
+    }
+    function closeNoteModal() { document.getElementById('note-modal').classList.add('hidden'); }
+    function saveNote() {
+      if (!state.activeNoteTarget) return;
+      const content = document.getElementById('note-input').value.trim();
+      const { ref, text } = state.activeNoteTarget;
+      state.notes = state.notes.filter(n => n.ref !== ref);
+      if (content) {
+        state.notes.unshift({ ref, text, content, date: new Date().toLocaleDateString() });
+        showToast('Catatan disimpan');
+      }
+      persist();
+      closeNoteModal();
+      closeVerseSheet();
+      if (state.route === 'library') render();
+    }
+
+    // --- NON-CALENDAR READING PROGRESS & MILESTONES VIEW ---
+    function viewPlans() {
+      const isId = state.uiLang === 'id';
+      const stats = getProgressStats();
+
+      return `
+        <div class="fade-up space-y-8">
+          <!-- Header + Reset Control -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <span class="text-xs font-bold uppercase tracking-widest text-brand">${isId ? 'Pelacak Bacaan' : 'Reading Tracker'}</span>
+              <h1 class="font-display font-bold text-3xl tracking-tight mt-0.5">${isId ? 'Jalur Progres & Pencapaian' : 'Reading Journey & Milestones'}</h1>
+              <p class="text-xs text-ink-mutedLight dark:text-ink-mutedDark mt-1">
+                ${isId ? 'Progres dimulai dari 0 saat belum ada bacaan. Selesaikan tahap bacaan atau buka pasalnya langsung.' : 'Progress starts at 0 until you begin reading. Complete milestones or open chapters directly.'}
+              </p>
+            </div>
+
+            <button onclick="resetAllProgress()" class="self-start sm:self-auto inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-surface-light dark:bg-surface-dark border border-stone-200 dark:border-stone-800 hover:border-rose-400 text-xs font-semibold transition-colors">
+              ${ICONS.reset}
+              <span>${isId ? 'Reset ke 0' : 'Reset to 0'}</span>
+            </button>
+          </div>
+
+          <!-- Top Hero Summary Card (Radial Ring + Live Counters) -->
+          <div class="rounded-3xl bg-surface-light dark:bg-surface-dark border border-stone-200/80 dark:border-stone-800 p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+            <div class="lg:col-span-6 flex items-center gap-5">
+              ${buildRadialRing(stats.pct, 92, 8, `${stats.pct}%`)}
+              <div class="space-y-1.5">
+                <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${stats.isZero ? 'bg-stone-200/80 dark:bg-stone-800 text-ink-mutedLight dark:text-ink-mutedDark' : 'bg-amber-500/15 text-brand'}">
+                  ${stats.isZero ? (isId ? 'Status: 0 • Belum Dibaca' : 'Status: 0 • Unread') : (isId ? 'Sedang Berjalan' : 'In Progress')}
+                </span>
+                <h2 class="font-display font-bold text-2xl">
+                  ${stats.isZero
+                    ? (isId ? '0% — Siap Memulai' : '0% — Ready to Begin')
+                    : (isId ? `${stats.completedCount} dari ${stats.totalMilestones} Tahap Selesai` : `${stats.completedCount} of ${stats.totalMilestones} Milestones`)}
+                </h2>
+                <p class="text-xs text-ink-mutedLight dark:text-ink-mutedDark leading-relaxed">
+                  ${stats.isZero
+                    ? (isId ? 'Belum ada pasal yang dibuka. Klik "Baca Sekarang" pada salah satu tahap di bawah untuk memulai.' : 'No chapters opened yet. Tap "Read Now" on any milestone below to start.')
+                    : (isId ? `Kamu telah membaca ${stats.chaptersCount} pasal berbeda di BibleSpace.` : `You have read ${stats.chaptersCount} distinct chapters on BibleSpace.`)}
+                </p>
+              </div>
+            </div>
+
+            <div class="lg:col-span-6 grid grid-cols-3 gap-3">
+              <div class="p-4 rounded-2xl bg-surface-subtleLight dark:bg-surface-subtleDark">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-ink-mutedLight dark:text-ink-mutedDark block">${isId ? 'Pasal Dibaca' : 'Chapters'}</span>
+                <span class="font-display font-bold text-2xl sm:text-3xl mt-1 block">${stats.chaptersCount}</span>
+              </div>
+              <div class="p-4 rounded-2xl bg-surface-subtleLight dark:bg-surface-subtleDark">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-ink-mutedLight dark:text-ink-mutedDark block">${isId ? 'Tahap Lulus' : 'Milestones'}</span>
+                <span class="font-display font-bold text-2xl sm:text-3xl text-brand mt-1 block">${stats.completedCount}</span>
+              </div>
+              <div class="p-4 rounded-2xl bg-surface-subtleLight dark:bg-surface-subtleDark">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-ink-mutedLight dark:text-ink-mutedDark block">${isId ? 'Ayat Disimpan' : 'Saved'}</span>
+                <span class="font-display font-bold text-2xl sm:text-3xl mt-1 block">${state.bookmarks.length}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Non-Calendar Milestone Tracks (3 Curated Thematic Paths) -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            ${READING_TRACKS.map(tr => {
+              const doneInTrack = tr.milestones.filter(m => state.completedMilestones.includes(m.id)).length;
+              const trackPct = Math.round((doneInTrack / tr.milestones.length) * 100);
+
+              return `
+                <div class="rounded-3xl bg-surface-light dark:bg-surface-dark border border-stone-200/80 dark:border-stone-800 p-6 flex flex-col justify-between space-y-5">
+                  <div class="space-y-4">
+                    <div class="flex items-start justify-between gap-3">
+                      <div>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-brand">${isId ? tr.tagId : tr.tagEn}</span>
+                        <h3 class="font-display font-bold text-xl mt-0.5">${isId ? tr.titleId : tr.titleEn}</h3>
+                      </div>
+                      ${buildRadialRing(trackPct, 52, 5, `${doneInTrack}/${tr.milestones.length}`)}
+                    </div>
+
+                    <p class="text-xs text-ink-mutedLight dark:text-ink-mutedDark leading-relaxed">
+                      ${isId ? tr.descId : tr.descEn}
+                    </p>
+
+                    <!-- Linear Segmented Progress Bar -->
+                    <div class="grid grid-cols-4 gap-1.5">
+                      ${tr.milestones.map(m => {
+                        const isDone = state.completedMilestones.includes(m.id);
+                        return `<div class="h-1.5 rounded-full transition-all ${isDone ? 'bg-brand' : 'bg-stone-200 dark:bg-stone-800'}"></div>`;
+                      }).join('')}
+                    </div>
+
+                    <!-- Sequential Passage Stepper List (Zero Calendar Grid!) -->
+                    <div class="space-y-2.5 pt-1">
+                      ${tr.milestones.map((m, idx) => {
+                        const isDone = state.completedMilestones.includes(m.id);
+                        return `
+                          <div class="p-3 rounded-2xl border transition-all flex items-center justify-between gap-2.5 ${isDone ? 'bg-amber-500/8 border-brand/40' : 'bg-surface-subtleLight/75 dark:bg-surface-subtleDark/75 border-transparent'}">
+                            <button onclick="toggleMilestone('${m.id}', '${m.bookId}', ${m.ch})" class="flex items-center gap-3 text-left flex-1 min-w-0">
+                              <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-colors ${isDone ? 'bg-brand text-white' : 'bg-surface-light dark:bg-surface-dark border border-stone-300 dark:border-stone-700 text-ink-mutedLight'}">
+                                ${isDone ? ICONS.check : idx + 1}
+                              </span>
+                              <div class="min-w-0">
+                                <span class="text-xs font-bold block truncate ${isDone ? 'line-through opacity-75' : ''}">${isId ? m.labelId : m.labelEn}</span>
+                                <span class="text-[11px] text-brand font-medium block">${isId ? m.refId : m.refEn}</span>
+                              </div>
+                            </button>
+
+                            <button onclick="jumpToBook('${m.bookId}', ${m.ch})" class="px-3 py-1.5 rounded-full bg-surface-light dark:bg-surface-dark hover:bg-stone-900 hover:text-white dark:hover:bg-stone-100 dark:hover:text-stone-900 border border-stone-200 dark:border-stone-700 text-[11px] font-semibold shrink-0 transition-colors">
+                              ${isId ? 'Baca' : 'Read'}
+                            </button>
+                          </div>
+                        `;
+                      }).join('')}
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function toggleMilestone(milestoneId, bookId, ch) {
+      const idx = state.completedMilestones.indexOf(milestoneId);
+      const chKey = `${bookId}:${ch}`;
+      if (idx >= 0) {
+        state.completedMilestones.splice(idx, 1);
+      } else {
+        state.completedMilestones.push(milestoneId);
+        if (!state.readChapters.includes(chKey)) {
+          state.readChapters.push(chKey);
+        }
+        const b = BOOKS.find(x => x.id === bookId);
+        if (b) {
+          const entry = `${getBookName(b)} ${ch}`;
+          state.history = [entry, ...state.history.filter(h => h !== entry)].slice(0, 12);
+        }
+      }
+      persist();
+      renderNav();
+      render();
+    }
+
+    // --- DAILY VERSE PHOTO CARD STUDIO ---
+    function viewDaily() {
+      const sp = SPOTLIGHTS[state.spotlightIdx];
+      const isId = state.uiLang === 'id';
+      const activeText = state.dailyCustomText || (isId ? sp.verseId : sp.verseEn);
+      const activeRef = state.dailyCustomRef || (isId ? sp.refId : sp.refEn);
+
+      return `
+        <div class="fade-up max-w-4xl mx-auto space-y-8">
+          <div>
+            <h1 class="font-display font-bold text-3xl tracking-tight">${isId ? 'Studio Kartu Ayat' : 'Verse Card Studio'}</h1>
+            <p class="text-xs text-ink-mutedLight dark:text-ink-mutedDark mt-1">${isId ? 'Bikin kartu kutipan Alkitab berlatar fotografi estetik atau kertas editorial.' : 'Create scripture quote cards with editorial photography or paper textures.'}</p>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div class="lg:col-span-6 space-y-5">
+              <div class="p-6 rounded-3xl bg-surface-light dark:bg-surface-dark border border-stone-200/80 dark:border-stone-800 space-y-3">
+                <span class="text-xs font-bold text-brand">${activeRef}</span>
+                <p class="font-serif text-2xl leading-snug">“${activeText}”</p>
+              </div>
+
+              <div class="space-y-2">
+                <span class="text-xs font-semibold block">${isId ? 'Pilih Gaya Kartu:' : 'Choose Card Style:'}</span>
+                <div class="flex flex-wrap gap-2">
+                  ${[
+                    { id: 'photoMorning', label: 'Foto Cahaya Pagi' },
+                    { id: 'photoMountain', label: 'Foto Pegunungan' },
+                    { id: 'espresso', label: 'Espresso Dark' },
+                    { id: 'paper', label: 'Warm Paper' }
+                  ].map(th => `
+                    <button onclick="setCardTheme('${th.id}')" class="px-4 py-2 rounded-full text-xs font-semibold transition-all ${state.cardTheme === th.id ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900' : 'bg-surface-subtleLight dark:bg-surface-subtleDark'}">
+                      ${th.label}
+                    </button>
+                  `).join('')}
+                </div>
+              </div>
+
+              <div class="flex flex-wrap gap-2.5 pt-2">
+                <button onclick="nextDailyQuote()" class="px-5 py-2.5 rounded-full bg-surface-subtleLight dark:bg-surface-subtleDark text-xs font-semibold hover:bg-stone-200 dark:hover:bg-stone-800">
+                  ${isId ? 'Acak Ayat Lain' : 'Shuffle Verse'}
+                </button>
+                <button onclick="downloadDailyCard()" class="px-6 py-2.5 rounded-full bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 hover:opacity-90 text-xs font-bold">
+                  ${isId ? 'Download PNG' : 'Download PNG'}
+                </button>
+              </div>
+            </div>
+
+            <div class="lg:col-span-6 flex justify-center">
+              <canvas id="daily-canvas" width="600" height="600" class="w-full max-w-[360px] rounded-3xl shadow-xl border border-stone-200 dark:border-stone-800"></canvas>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function setCardTheme(th) { state.cardTheme = th; render(); }
+    function nextDailyQuote() {
+      state.dailyCustomText = null;
+      state.dailyCustomRef = null;
+      state.spotlightIdx = (state.spotlightIdx + 1) % SPOTLIGHTS.length;
+      render();
+    }
+
+    function renderCanvasText(ctx, text, ref, fg, accent) {
+      ctx.fillStyle = accent;
+      ctx.font = 'bold 13px sans-serif';
+      ctx.fillText('BIBLESPACE', 56, 72);
+
+      ctx.fillStyle = fg;
+      ctx.font = '32px Georgia, serif';
+      const words = `“${text}”`.split(' ');
+      let line = '';
+      let y = 185;
+      for (let i = 0; i < words.length; i++) {
+        const test = line + words[i] + ' ';
+        if (ctx.measureText(test).width > 480 && i > 0) {
+          ctx.fillText(line, 56, y);
+          line = words[i] + ' ';
+          y += 44;
+        } else {
+          line = test;
+        }
+      }
+      ctx.fillText(line, 56, y);
+
+      ctx.fillStyle = accent;
+      ctx.font = 'bold 18px sans-serif';
+      ctx.fillText(ref, 56, y + 64);
+
+      ctx.font = '12px sans-serif';
+      ctx.fillText('biblespace • @doysleepwell', 56, 544);
+    }
+
+    function drawDailyCanvas() {
+      const canvas = document.getElementById('daily-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const sp = SPOTLIGHTS[state.spotlightIdx];
+      const isId = state.uiLang === 'id';
+      const text = state.dailyCustomText || (isId ? sp.verseId : sp.verseEn);
+      const ref = state.dailyCustomRef || (isId ? sp.refId : sp.refEn);
+
+      if (state.cardTheme === 'photoMorning' || state.cardTheme === 'photoMountain') {
+        const imgUrl = state.cardTheme === 'photoMorning' ? PHOTOS.morningLight : PHOTOS.mountainDawn;
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0, 600, 600);
+          ctx.fillStyle = 'rgba(20, 18, 16, 0.56)';
+          ctx.fillRect(0, 0, 600, 600);
+          renderCanvasText(ctx, text, ref, '#FFFFFF', '#FDE68A');
+        };
+        img.onerror = () => {
+          ctx.fillStyle = '#1C1917';
+          ctx.fillRect(0, 0, 600, 600);
+          renderCanvasText(ctx, text, ref, '#FFFFFF', '#FBBF24');
+        };
+        img.src = imgUrl;
+        return;
+      }
+
+      const themes = {
+        espresso: { bg1: '#1C1917', bg2: '#0C0A09', fg: '#FAFAF9', accent: '#F59E0B' },
+        paper: { bg1: '#FAF8F5', bg2: '#EFECE6', fg: '#18181B', accent: '#B45309' }
+      };
+      const pal = themes[state.cardTheme] || themes.espresso;
+
+      const grad = ctx.createLinearGradient(0, 0, 600, 600);
+      grad.addColorStop(0, pal.bg1);
+      grad.addColorStop(1, pal.bg2);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 600, 600);
+      renderCanvasText(ctx, text, ref, pal.fg, pal.accent);
+    }
+
+    function downloadDailyCard() {
+      const c = document.getElementById('daily-canvas');
+      if (!c) return;
+      const a = document.createElement('a');
+      a.download = 'BibleSpace-Card.png';
+      a.href = c.toDataURL('image/png');
+      a.click();
+      showToast('Gambar berhasil diunduh!');
+    }
+
+    // --- STUDY VIEW ---
+    function viewStudy() {
+      const isId = state.uiLang === 'id';
+      return `
+        <div class="fade-up space-y-8">
+          <div>
+            <h1 class="font-display font-bold text-3xl tracking-tight">${isId ? 'Tafsir, Kamus & Paralel' : 'Study, Lexicon & Parallel'}</h1>
+            <p class="text-xs text-ink-mutedLight dark:text-ink-mutedDark mt-1">${isId ? 'Bandingkan terjemahan dan pelajari kata kunci Ibrani & Yunani.' : 'Compare translations and explore Hebrew & Greek keywords.'}</p>
+          </div>
+
+          <div class="p-6 rounded-3xl bg-surface-light dark:bg-surface-dark border border-stone-200/80 dark:border-stone-800 space-y-4">
+            <h2 class="font-display font-bold text-lg">${isId ? 'Perbandingan Terjemahan Paralel' : 'Parallel Verse Comparison'}</h2>
+            <div class="flex flex-wrap gap-2">
+              <input id="compare-input" type="text" value="Romans 8:28" class="px-4 py-2 rounded-full bg-surface-subtleLight dark:bg-surface-subtleDark text-sm focus:outline-none" />
+              <button onclick="runCompare()" class="px-5 py-2 rounded-full bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-xs font-bold">${isId ? 'Bandingkan' : 'Compare'}</button>
+            </div>
+            <div id="compare-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="p-4 rounded-2xl bg-surface-subtleLight dark:bg-surface-subtleDark text-xs text-ink-mutedLight dark:text-ink-mutedDark">Klik Bandingkan untuk melihat versi WEB, KJV, dan ASV berdampingan.</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-5 space-y-3">
+              <h2 class="font-display font-bold text-lg">${isId ? 'Kamus Kata Asli' : 'Original Language Glossary'}</h2>
+              ${GLOSSARY.map(g => `
+                <div class="p-4 rounded-2xl bg-surface-light dark:bg-surface-dark border border-stone-200/80 dark:border-stone-800">
+                  <span class="font-display font-bold text-sm text-brand block">${g.term}</span>
+                  <p class="text-xs text-ink-mutedLight dark:text-ink-mutedDark mt-1 leading-relaxed">${g.def}</p>
+                </div>
+              `).join('')}
+            </div>
+
+            <div class="lg:col-span-7 space-y-3">
+              <h2 class="font-display font-bold text-lg">${isId ? 'Ringkasan Kitab & Surat Rasul' : 'Books & Epistles Overview'}</h2>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[520px] overflow-y-auto pr-1">
+                ${BOOKS.map(b => `
+                  <button onclick="jumpToBook('${b.id}')" class="p-4 rounded-2xl bg-surface-light dark:bg-surface-dark border border-stone-200/80 dark:border-stone-800 hover:border-brand text-left transition-colors">
+                    <div class="flex justify-between items-center">
+                      <span class="font-display font-bold text-sm">${getBookName(b)}</span>
+                      <span class="text-[11px] text-brand font-semibold">${b.chapters} Pasal</span>
+                    </div>
+                    <p class="text-xs text-ink-mutedLight dark:text-ink-mutedDark mt-1.5 leading-relaxed">${isId ? b.summaryId : b.summaryEn}</p>
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function runCompare() {
+      const ref = document.getElementById('compare-input').value.trim();
+      const grid = document.getElementById('compare-grid');
+      if (!ref || !grid) return;
+      grid.innerHTML = `<p class="text-xs col-span-3 opacity-70">Memuat...</p>`;
+      try {
+        const res = await Promise.all(['web', 'kjv', 'asv'].map(async c => {
+          const r = await fetch(`https://bible-api.com/${encodeURIComponent(ref)}?translation=${c}`);
+          const d = await r.json();
+          return { code: c.toUpperCase(), text: d.text || 'Tidak ditemukan' };
+        }));
+        grid.innerHTML = res.map(x => `
+          <div class="p-4 rounded-2xl bg-surface-subtleLight dark:bg-surface-subtleDark space-y-1.5">
+            <span class="text-[11px] font-bold text-brand">${x.code}</span>
+            <p class="text-xs leading-relaxed">${x.text}</p>
+          </div>
+        `).join('');
+      } catch (e) {
+        grid.innerHTML = `<p class="text-xs text-rose-500 col-span-3">Gagal memuat perbandingan.</p>`;
+      }
+    }
+
+    // --- CHARACTERS ---
+    function viewCharacters() {
+      return `
+        <div class="fade-up space-y-6">
+          <div>
+            <h1 class="font-display font-bold text-3xl tracking-tight">Tokoh Alkitab</h1>
+            <p class="text-xs text-ink-mutedLight dark:text-ink-mutedDark mt-1">Kisah perjalanan iman tokoh-tokoh utama dalam Perjanjian Lama &amp; Baru.</p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            ${CHARACTERS.map(c => `
+              <div class="rounded-3xl overflow-hidden bg-surface-light dark:bg-surface-dark border border-stone-200/80 dark:border-stone-800 flex flex-col justify-between photo-card">
+                <div>
+                  <div class="h-40 w-full relative overflow-hidden">
+                    <img src="${c.photo}" alt="${c.name}" class="w-full h-full object-cover" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent"></div>
+                    <div class="absolute bottom-3 left-4 right-4 flex justify-between items-center text-[11px] font-semibold text-amber-200">
+                      <span>${c.role}</span>
+                      <span>${c.era}</span>
+                    </div>
+                  </div>
+                  <div class="p-6 space-y-2.5">
+                    <h2 class="font-display font-bold text-xl">${c.name}</h2>
+                    <p class="text-xs text-ink-mutedLight dark:text-ink-mutedDark leading-relaxed">${c.bio}</p>
+                    <ul class="text-xs space-y-1 pt-2 list-disc list-inside opacity-85">
+                      ${c.events.map(e => `<li>${e}</li>`).join('')}
+                    </ul>
+                  </div>
+                </div>
+                <div class="px-6 pb-6 flex flex-wrap gap-1.5">
+                  ${c.refs.map(r => `<span class="px-2.5 py-1 rounded-full bg-surface-subtleLight dark:bg-surface-subtleDark text-[11px] font-medium">${r}</span>`).join('')}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // --- EXPLORER TIMELINE ---
+    function viewExplorer() {
+      return `
+        <div class="fade-up max-w-4xl mx-auto space-y-6">
+          <div>
+            <h1 class="font-display font-bold text-3xl tracking-tight">Linimasa Sejarah</h1>
+            <p class="text-xs text-ink-mutedLight dark:text-ink-mutedDark mt-1">Kronologi peristiwa penting dari zaman leluhur hingga gereja mula-mula.</p>
+          </div>
+          <div class="space-y-5">
+            ${TIMELINE_EVENTS.map(ev => `
+              <div class="rounded-3xl overflow-hidden bg-surface-light dark:bg-surface-dark border border-stone-200/80 dark:border-stone-800 grid grid-cols-1 sm:grid-cols-12 photo-card">
+                <div class="sm:col-span-4 h-44 sm:h-auto relative overflow-hidden">
+                  <img src="${ev.photo}" alt="${ev.title}" class="w-full h-full object-cover" />
+                </div>
+                <div class="sm:col-span-8 p-6 flex flex-col justify-center space-y-1.5">
+                  <div class="flex justify-between text-xs font-bold text-brand">
+                    <span>${ev.period}</span>
+                    <span>${ev.date}</span>
+                  </div>
+                  <h3 class="font-display font-bold text-xl">${ev.title}</h3>
+                  <p class="text-[11px] font-medium opacity-75">${ev.location}</p>
+                  <p class="text-xs text-ink-mutedLight dark:text-ink-mutedDark leading-relaxed pt-1">${ev.desc}</p>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // --- QUIZ VIEW ---
+    function viewQuiz() {
+      const total = QUIZ_QUESTIONS.length;
+      if (state.quizIndex >= total) {
+        const pct = Math.round((state.quizScore / total) * 100);
+        return `
+          <div class="fade-up max-w-lg mx-auto rounded-3xl overflow-hidden bg-surface-light dark:bg-surface-dark border border-stone-200/80 dark:border-stone-800">
+            <div class="h-40 relative overflow-hidden">
+              <img src="${PHOTOS.morningLight}" alt="Quiz Complete" class="w-full h-full object-cover" />
+              <div class="absolute inset-0 bg-stone-950/60 flex items-center justify-center">
+                <span class="px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-md text-amber-200 text-xs font-bold uppercase tracking-widest">Selesai</span>
+              </div>
+            </div>
+            <div class="p-8 text-center space-y-5">
+              <div>
+                <span class="font-display font-bold text-5xl block">${state.quizScore}<span class="text-2xl text-ink-mutedLight">/${total}</span></span>
+                <p class="text-xs font-semibold text-brand mt-1">Akurasi ${pct}%</p>
+              </div>
+              <p class="text-xs text-ink-mutedLight dark:text-ink-mutedDark leading-relaxed max-w-sm mx-auto">
+                Mantap! Terus perdalam pemahamanmu lewat bacaan pasal dan kamus kata asli di BibleSpace.
+              </p>
+              <div class="flex justify-center gap-2.5 pt-2">
+                <button onclick="resetQuiz()" class="px-6 py-2.5 rounded-full bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-xs font-bold">Ulangi Kuis</button>
+                <button onclick="navigate('read')" class="px-5 py-2.5 rounded-full bg-surface-subtleLight dark:bg-surface-subtleDark text-xs font-semibold">Baca Alkitab</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      const q = QUIZ_QUESTIONS[state.quizIndex];
+      const letters = ['A', 'B', 'C', 'D'];
+      const answered = state.quizSelectedOption !== null;
+
+      return `
+        <div class="fade-up max-w-2xl mx-auto space-y-6">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h1 class="font-display font-bold text-2xl sm:text-3xl tracking-tight">Kuis Pemahaman Alkitab</h1>
+              <p class="text-xs text-ink-mutedLight dark:text-ink-mutedDark mt-0.5">Uji pengetahuanmu tentang isi surat rasul, sejarah, dan bahasa asli.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="px-3.5 py-1.5 rounded-full bg-surface-light dark:bg-surface-dark border border-stone-200 dark:border-stone-800 text-xs font-bold">
+                Skor: <span class="text-brand">${state.quizScore}</span>
+              </span>
+              ${state.quizStreak > 1 ? `<span class="px-3 py-1.5 rounded-full bg-amber-500/15 text-brand text-xs font-bold">Streak ${state.quizStreak}x</span>` : ''}
+            </div>
+          </div>
+
+          <div class="grid grid-cols-6 gap-1.5">
+            ${QUIZ_QUESTIONS.map((_, idx) => `
+              <div class="h-1.5 rounded-full transition-all ${idx < state.quizIndex ? 'bg-brand' : idx === state.quizIndex ? 'bg-stone-900 dark:bg-stone-100' : 'bg-stone-200 dark:bg-stone-800'}"></div>
+            `).join('')}
+          </div>
+
+          <div class="p-6 sm:p-8 rounded-3xl bg-surface-light dark:bg-surface-dark border border-stone-200/80 dark:border-stone-800 space-y-6">
+            <div class="flex items-center justify-between gap-2">
+              <span class="px-3 py-1 rounded-full bg-surface-subtleLight dark:bg-surface-subtleDark text-[11px] font-bold text-brand">${q.category}</span>
+              <span class="text-xs font-mono text-ink-mutedLight dark:text-ink-mutedDark">Pertanyaan ${state.quizIndex + 1} dari ${total}</span>
+            </div>
+
+            <h2 class="font-display font-bold text-xl sm:text-2xl leading-snug">${q.q}</h2>
+
+            <div class="space-y-3">
+              ${q.options.map((opt, i) => {
+                let cardStyle = 'bg-surface-subtleLight/70 dark:bg-surface-subtleDark/70 border-transparent hover:border-stone-400 dark:hover:border-stone-600';
+                let badgeStyle = 'bg-surface-light dark:bg-surface-dark text-ink-light dark:text-ink-dark border border-stone-200 dark:border-stone-700';
+                let statusIcon = '';
+
+                if (answered) {
+                  if (i === q.answer) {
+                    cardStyle = 'bg-emerald-500/10 border-emerald-600/60 dark:border-emerald-400/50';
+                    badgeStyle = 'bg-emerald-600 text-white border-transparent';
+                    statusIcon = '✓';
+                  } else if (i === state.quizSelectedOption) {
+                    cardStyle = 'bg-rose-500/10 border-rose-500/60';
+                    badgeStyle = 'bg-rose-600 text-white border-transparent';
+                    statusIcon = '✕';
+                  } else {
+                    cardStyle = 'opacity-50 border-transparent bg-surface-subtleLight/40 dark:bg-surface-subtleDark/40';
+                  }
+                }
+
+                return `
+                  <button onclick="answerQuiz(${i})" ${answered ? 'disabled' : ''} class="w-full text-left p-4 rounded-2xl border transition-all flex items-center justify-between gap-3 ${cardStyle}">
+                    <div class="flex items-center gap-3.5">
+                      <span class="w-8 h-8 rounded-xl flex items-center justify-center font-display font-bold text-xs shrink-0 ${badgeStyle}">
+                        ${statusIcon || letters[i]}
+                      </span>
+                      <span class="text-sm font-medium leading-snug">${opt}</span>
+                    </div>
+                  </button>
+                `;
+              }).join('')}
+            </div>
+
+            ${answered ? `
+              <div class="p-5 rounded-2xl bg-surface-subtleLight dark:bg-surface-subtleDark border border-stone-200 dark:border-stone-800 space-y-3 fade-up">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold ${state.quizSelectedOption === q.answer ? 'text-emerald-600 dark:text-emerald-400' : 'text-brand'}">
+                    ${state.quizSelectedOption === q.answer ? 'Jawaban Tepat!' : 'Pembahasan'}
+                  </span>
+                  <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-surface-light dark:bg-surface-dark">${q.ref}</span>
+                </div>
+                <p class="text-xs text-ink-mutedLight dark:text-ink-mutedDark leading-relaxed">${q.exp}</p>
+                <div class="pt-1">
+                  <button onclick="nextQuiz()" class="px-5 py-2.5 rounded-full bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-xs font-bold">
+                    ${state.quizIndex + 1 === total ? 'Lihat Hasil Akhir →' : 'Pertanyaan Berikutnya →'}
+                  </button>
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    function answerQuiz(i) {
+      if (state.quizSelectedOption !== null) return;
+      state.quizSelectedOption = i;
+      const q = QUIZ_QUESTIONS[state.quizIndex];
+      if (i === q.answer) {
+        state.quizScore++;
+        state.quizStreak++;
+      } else {
+        state.quizStreak = 0;
+      }
+      render();
+    }
+    function nextQuiz() { state.quizIndex++; state.quizSelectedOption = null; render(); }
+    function resetQuiz() { state.quizIndex = 0; state.quizScore = 0; state.quizStreak = 0; state.quizSelectedOption = null; render(); }
+
+    // --- LIBRARY ---
+    function viewLibrary() {
+      const hlKeys = Object.keys(state.highlights);
+      return `
+        <div class="fade-up space-y-8">
+          <h1 class="font-display font-bold text-3xl tracking-tight">Tersimpan &amp; Catatan</h1>
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="space-y-3">
+              <h2 class="font-display font-bold text-base">Bookmark (${state.bookmarks.length})</h2>
+              ${state.bookmarks.length ? state.bookmarks.map(b => `
+                <div class="p-4 rounded-2xl bg-surface-light dark:bg-surface-dark border border-stone-200/80 dark:border-stone-800 space-y-1">
+                  <span class="text-xs font-bold text-brand">${b.ref}</span>
+                  <p class="text-xs leading-relaxed">${b.text}</p>
+                </div>
+              `).join('') : '<p class="text-xs opacity-60">Belum ada bookmark.</p>'}
+            </div>
+
+            <div class="space-y-3">
+              <h2 class="font-display font-bold text-base">Stabilo (${hlKeys.length})</h2>
+              ${hlKeys.length ? hlKeys.map(ref => `
+                <div class="p-3.5 rounded-2xl bg-surface-light dark:bg-surface-dark border border-stone-200/80 dark:border-stone-800 flex justify-between items-center text-xs">
+                  <span class="font-semibold">${ref}</span>
+                  <span class="px-2.5 py-0.5 rounded-full bg-amber-500/15 text-brand font-bold">${state.highlights[ref]}</span>
+                </div>
+              `).join('') : '<p class="text-xs opacity-60">Belum ada stabilo.</p>'}
+            </div>
+
+            <div class="space-y-3">
+              <h2 class="font-display font-bold text-base">Catatan (${state.notes.length})</h2>
+              ${state.notes.length ? state.notes.map(n => `
+                <div class="p-4 rounded-2xl bg-surface-light dark:bg-surface-dark border border-stone-200/80 dark:border-stone-800 space-y-1">
+                  <span class="text-xs font-bold text-accent">${n.ref}</span>
+                  <p class="text-xs leading-relaxed">${n.content}</p>
+                </div>
+              `).join('') : '<p class="text-xs opacity-60">Belum ada catatan.</p>'}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- CREATOR VIEW ---
+    function viewCreator() {
+      return `
+        <div class="fade-up max-w-3xl mx-auto space-y-8">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-widest text-brand">Menu Kreator</span>
+            <h1 class="font-display font-bold text-3xl sm:text-4xl tracking-tight mt-1">Tentang Kreator</h1>
+            <p class="text-xs text-ink-mutedLight dark:text-ink-mutedDark mt-1">Di balik perancangan dan pengembangan aplikasi web BibleSpace.</p>
+          </div>
+
+          <div class="rounded-3xl overflow-hidden bg-surface-light dark:bg-surface-dark border border-stone-200/80 dark:border-stone-800">
+            <div class="h-44 relative overflow-hidden">
+              <img src="${PHOTOS.ancientScroll}" alt="Creator Workspace" class="w-full h-full object-cover" />
+              <div class="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-stone-950/35 to-transparent"></div>
+            </div>
+
+            <div class="p-6 sm:p-8 -mt-12 relative z-10 space-y-6">
+              <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                <div class="flex items-end gap-4">
+                  <div class="w-20 h-20 rounded-3xl bg-stone-900 dark:bg-stone-100 text-stone-50 dark:text-stone-900 border-4 border-surface-light dark:border-surface-dark flex items-center justify-center font-serif italic font-bold text-4xl shadow-md">
+                    D
+                  </div>
+                  <div class="pb-1">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-brand block">Developer &amp; UI Designer</span>
+                    <h2 class="font-display font-bold text-2xl">Dandy</h2>
+                  </div>
+                </div>
+
+                <div class="flex flex-wrap gap-2">
+                  <a href="https://www.instagram.com/doysleepwell/" target="_blank" rel="noopener noreferrer" class="px-5 py-2.5 rounded-full bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 hover:opacity-90 text-xs font-bold transition-opacity">
+                    Instagram @doysleepwell ↗
+                  </a>
+                  <button onclick="copyCreatorUsername()" class="px-4 py-2.5 rounded-full bg-surface-subtleLight dark:bg-surface-subtleDark hover:bg-stone-200 dark:hover:bg-stone-800 text-xs font-semibold transition-colors">
+                    Salin Handle
+                  </button>
+                </div>
+              </div>
+
+              <p class="text-sm text-ink-mutedLight dark:text-ink-mutedDark leading-relaxed">
+                Mahasiswa Teknik Informatika &amp; Web Developer yang merancang <strong class="text-ink-light dark:text-ink-dark">BibleSpace</strong> dengan visi menghadirkan ruang baca Alkitab digital yang hangat, bebas gangguan, mudah dipahami dalam Bahasa Indonesia, serta dilengkapi konteks historis dan bahasa asli.
+              </p>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                <div class="p-4 rounded-2xl bg-surface-subtleLight dark:bg-surface-subtleDark">
+                  <span class="text-[10px] uppercase tracking-wider font-bold text-brand block">Fokus Desain</span>
+                  <span class="font-display font-bold text-sm mt-1 block">Editorial &amp; Tenang</span>
+                </div>
+                <div class="p-4 rounded-2xl bg-surface-subtleLight dark:bg-surface-subtleDark">
+                  <span class="text-[10px] uppercase tracking-wider font-bold text-brand block">Teks Utama</span>
+                  <span class="font-display font-bold text-sm mt-1 block">Terjemahan Baru (TB)</span>
+                </div>
+                <div class="p-4 rounded-2xl bg-surface-subtleLight dark:bg-surface-subtleDark">
+                  <span class="text-[10px] uppercase tracking-wider font-bold text-brand block">Kontak Sosial</span>
+                  <span class="font-display font-bold text-sm mt-1 block">@doysleepwell</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- SETTINGS ---
+    function viewSettings() {
+      return `
+        <div class="fade-up max-w-xl mx-auto space-y-5">
+          <h1 class="font-display font-bold text-3xl tracking-tight">Pengaturan</h1>
+          <div class="p-5 rounded-3xl bg-surface-light dark:bg-surface-dark border border-stone-200/80 dark:border-stone-800 flex items-center justify-between gap-4">
+            <div>
+              <h3 class="font-display font-bold text-sm">Bahasa Aplikasi &amp; Alkitab</h3>
+              <p class="text-xs text-ink-mutedLight dark:text-ink-mutedDark">Indonesia (TB) / English</p>
+            </div>
+            <button onclick="toggleUILang()" class="px-4 py-2 rounded-full bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-xs font-bold shrink-0">${state.uiLang.toUpperCase()}</button>
+          </div>
+          <div class="p-5 rounded-3xl bg-surface-light dark:bg-surface-dark border border-stone-200/80 dark:border-stone-800 flex items-center justify-between gap-4">
+            <div>
+              <h3 class="font-display font-bold text-sm">Mode Tampilan</h3>
+              <p class="text-xs text-ink-mutedLight dark:text-ink-mutedDark">Warm Paper Light / Espresso Dark</p>
+            </div>
+            <button onclick="toggleTheme(); render();" class="px-4 py-2 rounded-full bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-xs font-bold shrink-0">${state.theme === 'light' ? 'Dark Mode' : 'Light Mode'}</button>
+          </div>
+          <div class="p-5 rounded-3xl bg-surface-light dark:bg-surface-dark border border-stone-200/80 dark:border-stone-800 flex items-center justify-between gap-4">
+            <div>
+              <h3 class="font-display font-bold text-sm">Reset Progres Bacaan</h3>
+              <p class="text-xs text-ink-mutedLight dark:text-ink-mutedDark">Kembalikan hitungan pasal &amp; tahap ke 0</p>
+            </div>
+            <button onclick="resetAllProgress()" class="px-4 py-2 rounded-full bg-rose-600 text-white text-xs font-bold shrink-0">Reset 0</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- ROUTE DISPATCHER ---
+    function render() {
+      const root = document.getElementById('app-root');
+      switch (state.route) {
+        case 'home': root.innerHTML = viewHome(); break;
+        case 'read':
+          root.innerHTML = viewReader();
+          fetchChapter(state.currentBook, state.currentChapter);
+          break;
+        case 'daily':
+          root.innerHTML = viewDaily();
+          setTimeout(drawDailyCanvas, 30);
+          break;
+        case 'study': root.innerHTML = viewStudy(); break;
+        case 'characters': root.innerHTML = viewCharacters(); break;
+        case 'explorer': root.innerHTML = viewExplorer(); break;
+        case 'quiz': root.innerHTML = viewQuiz(); break;
+        case 'plans': root.innerHTML = viewPlans(); break;
+        case 'library': root.innerHTML = viewLibrary(); break;
+        case 'creator': root.innerHTML = viewCreator(); break;
+        case 'settings': root.innerHTML = viewSettings(); break;
+      }
+    }
+
+    // Boot
+    renderNav();
+    applyTheme();
+    navigate('home');
+  </script>
+</body>
+</html>
